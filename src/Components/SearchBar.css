@@ -1,6 +1,6 @@
 input[type="search"] {
     border-radius: 10px;
-    background: url("../assets/searchIcon.png") no-repeat left;
+    background: url("../Assets/searchIcon.png") no-repeat left;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: 3px;
