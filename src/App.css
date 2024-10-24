@@ -6,8 +6,6 @@
 
 .Contacts {
   display: table-cell;
-  vertical-align: middle;
-  text-align: center;
   border-right-style: solid;
   border-right-width: 2px;
   border-right-color: lightgray;

@@ -1,8 +1,13 @@
 input[type="search"] {
-    border-radius: 10px;
+    display: flex;
+    border-radius: 20px;
     background: url("../Assets/searchIcon.png") no-repeat left;
     background-size: contain;
     background-repeat: no-repeat;
-    background-position: 3px;
+    background-position: 5%;
     text-align: center;
+    width: 70%;
+    height: 30px;
+    top: 10px;
+    position: relative;
 }
