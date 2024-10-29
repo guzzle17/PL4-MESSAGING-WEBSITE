@@ -1,13 +1,15 @@
 input[type="search"] {
-    display: flex;
+    float: right;
     border-radius: 20px;
+    border-color: lightgray;
     background: url("../Assets/searchIcon.png") no-repeat left;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: 5%;
     text-align: center;
     width: 70%;
-    height: 30px;
-    top: 10px;
+    height: 40px;
+    top: 8px;
+    right: 12%;
     position: relative;
 }

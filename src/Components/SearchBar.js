@@ -17,7 +17,7 @@ const SearchBar = () => {
             placeholder="Search"
             onChange={handleChange}
             value={searchInput} />
-        <ContactsList input={searchInput} />
+        
        </div>
    
 };
