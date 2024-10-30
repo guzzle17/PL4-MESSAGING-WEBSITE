@@ -1,20 +1,13 @@
+import React from "react";
+import Form from './Pages/Login&SignUp';
 import './App.css';
-import { React, useState } from "react";
-import SearchBar from './Components/SearchBar';
 
 function App() {
   return (
-    <div className="App">
-      <div className="Contacts">
-        <SearchBar />
-      </div>
-      <div className="MessageArea">
-        Messages
-      </div>
+    <div className="bg-[#e1edff] h-screen flex justify-center items-center">
+      <Form />
     </div>
   );
 }
-
-
 
 export default App;
