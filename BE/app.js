@@ -28,6 +28,7 @@ app.get('/', (req, res) => {
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { type } = require('@testing-library/user-event/dist/type');
 
 app.post('/api/register', async (req, res) => {
     try {
@@ -243,6 +244,7 @@ app.get('/api/conversation/:userId', async (req, res) => {
 
 app.post('/api/message', async (req, res) => {
     try {
+        console.log(req.body);
         const { conversationId, senderId, message, receiverId } = req.body;
 
         // Kiểm tra xem các trường cần thiết có hợp lệ không
@@ -269,6 +271,7 @@ app.post('/api/message', async (req, res) => {
                 sender_id: senderId,
                 content: message,
                 created_at: Date.now(),
+                type: "text",
                 status: 'sent'
             });
 
@@ -281,7 +284,8 @@ app.post('/api/message', async (req, res) => {
                 sender_id: senderId,
                 content: message,
                 created_at: Date.now(),
-                status: 'sent'
+                status: 'sent',
+                type: "text",
             });
 
             await newMessage.save();
@@ -310,6 +314,7 @@ app.get('/api/message/:conversationId', async (req, res) => {
             const user = await Users.findById(message.sender_id);
             return {
                 user: {
+                    id: user.id,
                     email: user.email,
                     fullName: user.fullName
                 },
