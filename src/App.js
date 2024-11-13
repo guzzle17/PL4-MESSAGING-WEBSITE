@@ -10,6 +10,9 @@ const ProtectedRoute = ({children}) => {
   return children;
 }
 
+// console.log(localStorage.getItem());
+// localStorage.clear(); // Xóa toàn bộ dữ liệu
+
 function App() {
   return (
     <Routes>

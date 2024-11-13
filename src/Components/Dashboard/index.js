@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import userDefault from '../../Assets/userDefault.png'
 import Input from '../Input'
+
 const Dashboard = () => {
     const contacts = [
         {
@@ -49,13 +50,38 @@ const Dashboard = () => {
             img: userDefault,
         }
     ]
+    useEffect(() => {
+        const loggedInUser = JSON.parse(localStorage.getItem('user:detail'));
+    
+        const fetchConversations = async () => {
+            if (!loggedInUser || !loggedInUser.id) {
+                console.error('User not logged in or missing user ID');
+                return;
+            }
+    
+            const res = await fetch(`http://localhost:8000/api/conversation/${loggedInUser.id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+    
+            const resData = await res.json();
+            console.log("resData >> ", resData[0]);
+            setConversations(resData)
+        };
+    
+        fetchConversations();
+    }, []);
+    const [user, serUser] = useState(JSON.parse(localStorage.getItem('user:detail')))
+    const [conversations, setConversations] = useState([])
   return (
     <div className='w-screen h-[97vh] flex'>
         <div className='w-[25%] h-full bg-secondary'>
             <div className='flex justify-center items-center my-4'>
                 <div className='border border-black p-[2px] rounded-full'><img src={userDefault} className='w-[75px] h-[75px]'/></div>
                 <div className='ml-4'>
-                    <h3 className='text-xl'>Nguyen Van Thuong</h3>
+                    <h3 className='text-xl'>{user.fullName}</h3>
                     <p className='text-lg font-light'>My account</p>
                 </div>
             </div>
@@ -64,14 +90,14 @@ const Dashboard = () => {
                 <div className='text-primary text-lg'>Messages</div>
                 <div className='max-h-[calc(95vh-150px)] overflow-y-auto'>
                     {
-                        contacts.map(({name, status, img}) => {
+                        conversations.map(({conversationId, participants, otherUser, last_message }) => {
                             return(
                                 <div className='flex items-center py-8 border-b border-b-gray-300'>
                                     <div className='cursor-pointer flex items-center'>
-                                    <div><img src={img} width={40} height={65}/></div>
+                                    <div><img src={userDefault} width={40} height={65}/></div>
                                     <div className='ml-6'>
-                                        <h3 className='font-semibold'>{name}</h3>
-                                        <p className='font-light text-gray-600'>{status}</p>
+                                        <h3 className='font-semibold'>{(participants.length > 2 ? "Group Name" : otherUser.fullName)}</h3>
+                                        <p className='font-light text-gray-600'>{(participants.length > 2 ? "group" : otherUser.email)}</p>
                                     </div>
                                     </div>
                                 </div>

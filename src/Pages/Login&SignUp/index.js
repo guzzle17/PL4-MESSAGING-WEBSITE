@@ -10,19 +10,42 @@ const Form = ({ isSignInPage = true }) => {
         email: '',
         password: ''
     });
+    const [error, setError] = useState(''); // Trạng thái để lưu thông báo lỗi
     const navigate = useNavigate();
     
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (isSignInPage && data.email === "a@gmail.com" && data.password === "a") {
-            localStorage.setItem('user:token', 'example-token');
-            navigate('/dashboard');
-        } else if (!isSignInPage) {
-            console.log("Sign-up successful with data:", data);
-            navigate('/users/sign_in');
-        } else {
-            alert("Email hoặc mật khẩu không đúng!");
+        console.log('data >>', data);
+    
+        try {
+            const res = await fetch(`http://localhost:8000/api/${isSignInPage ? 'login' : 'register'}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+    
+            if (res.status === 400) {
+                setError((isSignInPage ? "User email or password is incorrect" : "User already exists"));
+                return;
+            }
+    
+    
+            const resData = await res.json();
+            console.log('data >>', resData);
+    
+            if (resData.token) {
+                localStorage.setItem('user:token', resData.token);
+                localStorage.setItem('user:detail', JSON.stringify(resData.user));
+                navigate('/');
+            } else {
+                console.log('Error:', resData);
+                alert(resData.message || 'An unexpected error occurred.');
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+            alert('Failed to connect to the server. Please check your network connection.');
         }
     };
 
@@ -36,6 +59,11 @@ const Form = ({ isSignInPage = true }) => {
                 <div className='text-lg font-light text-gray-600'>
                     {isSignInPage ? 'Sign in to continue' : 'Sign up now to get started'}
                 </div>
+                {error && ( // Hiển thị pop-up lỗi nếu có lỗi
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative w-full mb-4 text-center" role="alert">
+                        <strong className="font-bold">Error:</strong> <span className="block sm:inline">{error}</span>
+                    </div>
+                )}
                 <form className='flex flex-col items-center w-full ml-6' onSubmit={handleSubmit}>
                     {!isSignInPage && (
                         <Input 
@@ -67,7 +95,7 @@ const Form = ({ isSignInPage = true }) => {
                     />
                     <Button 
                         label={isSignInPage ? 'Sign in' : 'Sign up'} 
-                        className='w-[250px] py-2 rounded-md bg-blue-600 text-white font-semibold text-lg hover:bg-blue-700 transition duration-300 mr-6' 
+                        className='w-[75%] py-2 rounded-md bg-blue-600 text-white font-semibold text-lg hover:bg-blue-700 transition duration-300 mr-10' 
                         type='submit'
                     />   
                 </form>
@@ -75,7 +103,10 @@ const Form = ({ isSignInPage = true }) => {
                     {isSignInPage ? "Don't have an account? " : 'Already have an account? '}
                     <span 
                         className='text-blue-500 font-medium cursor-pointer underline hover:text-blue-700'
-                        onClick={() => navigate(`/users/${isSignInPage ? 'sign_up' : 'sign_in'}`)}
+                        onClick={() => {
+                            navigate(`/users/${isSignInPage ? 'sign_up' : 'sign_in'}`)
+                            setError("")
+                        }}
                     >
                         Sign {isSignInPage ? 'up' : 'in'}
                     </span>
