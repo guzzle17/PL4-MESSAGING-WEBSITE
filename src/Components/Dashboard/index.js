@@ -30,75 +30,108 @@ const Dashboard = () => {
     const [user, setUser] = useState(JSON.parse(localStorage.getItem('user:detail')))
     const [conversations, setConversations] = useState([])
     const [messages, setMessages] = useState([]);
-    const [message, setMessage] = useState([]);
+    const [message, setMessage] = useState("");
+    const [users, setUsers] = useState([]);
 
-
-    const fetchMessages = async (conversationId, user) => {
-        console.log("id :>> ", conversationId);
-        if (!conversationId) {
-            console.error("Invalid conversationId:", conversationId);
-            return;
-        }
-    
-        try {
-            const res = await fetch(`http://localhost:8000/api/message/${conversationId}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-    
-            if (!res.ok) {
-                console.error("Failed to fetch messages:", res.statusText);
-                return;
+    useEffect(() => {
+        const fetchUsers = async () => {
+          try {
+            const userId = user?.id;
+            if (!userId) {
+              console.error('User ID is missing');
+              return;
             }
-    
-            const resData = await res.json();
-            console.log("messages :>> ", resData);
-            console.log("receiver :>> ", user);
-            // Cập nhật state `messages` với dữ liệu mới
-            console.log("bf:", messages.messages)
-            setMessages({messages: resData, receiver: user, conversationId});
-            console.log("af:", messages.messages)
+      
+            const response = await fetch(`http://localhost:8000/api/users/${userId}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+      
+            if (!response.ok) {
+              console.error('Failed to fetch users:', response.status);
+              return;
+            }
+      
+            const data = await response.json();
+            setUsers(data);
+          } catch (error) {
+            console.error('Error fetching users:', error);
+          }
+        };
+      
+        fetchUsers();
+      }, []);
+      
 
+    const fetchMessages = async (conversationId, receiver) => {
+        try {
+          const senderId = user?.id;
+          const receiverId = receiver?._id;
+      
+          if (!conversationId || !senderId || !receiverId) {
+            console.error('Missing conversationId, senderId, or receiverId');
+            return;
+          }
+      
+          const url = `http://localhost:8000/api/message/${conversationId}?senderId=${senderId}&receiverId=${receiverId}`;
+      
+          const res = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+      
+          if (!res.ok) {
+            console.error('Failed to fetch messages:', res.status);
+            return;
+          }
+      
+          const resData = await res.json();
+          console.log('resData:', resData);
+      
+          setMessages({ messages: resData, receiver, conversationId });
+          console.log("Messages: ", messages);
         } catch (error) {
-            console.error("Error fetching messages:", error);
+          console.error('Error fetching messages:', error);
         }
-    };
+      };
+      
     
     const sendMessage = async (e) => {
         e.preventDefault();
         console.log("check", messages.receiver, user?.id, message);
+
         if (!messages?.receiver?._id || !user?.id || !message) {
             console.error("Missing required fields: conversationId, senderId, message, or receiverId");
             return;
         }
-    
+
         try {
             const res = await fetch('http://localhost:8000/api/message', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                },  
+                },
                 body: JSON.stringify({
                     conversationId: messages?.conversationId,
                     senderId: user?.id,
                     message,
-                    receiverId: messages?.receiver?.id,
+                    receiverId: messages?.receiver?._id,
                 }),
             });
-    
+
             if (!res.ok) {
                 console.error("Failed to send message:", res.statusText);
                 return;
             }
-    
-         
-    
+
             // Clear the message input after successful send
-            setMessage('');
-            
-            fetchMessages(messages.conversationId, messages.receiver)
+            setMessage(''); // Set to empty string instead of an empty array
+            console.log("mess :", message);
+            // fetchMessages(messages.conversationId, messages.receiver)
         } catch (error) {
             console.error("Error sending message:", error);
         }
@@ -197,7 +230,7 @@ const Dashboard = () => {
                     <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-circle-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M9 12h6" /><path d="M12 9v6" /></svg>
                 </div>
                 <Input placeholder='Type a message...' value={message} onChange={(e) => setMessage(e.target.value)} className='w-[70%]' inputClassName='p-4 border-0 shadow-md rounded-full bg-light focus:ring-0 focus:border-0 outline-none w-full'/>
-                <div className={`ml-4 mt-4 p-4 cursor-pointer bg-light rounded-full ${!message && 'pointer-event-none'} `} onClick={(e) => sendMessage(e)}>
+                <div className={`ml-4 mt-4 p-4 cursor-pointer bg-light rounded-full ${!message && 'pointer-events-none'} `} onClick={(e) => sendMessage(e)}>
                     <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  
                     stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-send"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 14l11 -11" />
                     <path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5" /></svg>
@@ -207,7 +240,27 @@ const Dashboard = () => {
             
         </div>
         
-        <div className='w-[25%] h-full'></div>
+        <div className='w-[25%] h-full px-8 py-24'>
+        <div className='text-primary text-lg'>People</div>
+        {
+            users.length > 0 ? 
+            users.map((user) => {
+                return(
+                    <div className='flex items-center py-8 border-b border-b-gray-300'>
+                        <div className='cursor-pointer flex items-center' onClick={() =>
+                            fetchMessages("new", user)
+                        }>
+                        <div><img src={userDefault} width={40} height={65}/></div>
+                        <div className='ml-6'>
+                            <h3 className='font-semibold'>{user.fullName}</h3>
+                            <p className='font-light text-gray-600'>{user.email}</p>
+                        </div>
+                        </div>
+                    </div>
+                )
+            }) : <div className='text-center tex-lg font-semibold'> No more users </div>
+        }
+        </div>
     </div>
   )
 }

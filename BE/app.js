@@ -240,115 +240,121 @@ app.get('/api/conversation/:userId', async (req, res) => {
 //     }
 // });
 
-
-
 app.post('/api/message', async (req, res) => {
+
+    console.log("reqBody:", req.body);
     try {
-        console.log(req.body);
-        const { conversationId, senderId, message, receiverId } = req.body;
+      const { conversationId, senderId, message,receiverId = '' } = req.body;
+      console.log(conversationId, senderId, message,receiverId);
+      const type = "text";
+        
+      // Kiểm tra các trường yêu cầu
+      if (!senderId || !message || !type) {
+        return res.status(400).send('Please fill all required fields');
+      }
+      // Xử lý khi `conversationId` là 'new' và có `receiverId`
+      let conversation_id;
+      if (conversationId === 'new' && receiverId) {
 
-        // Kiểm tra xem các trường cần thiết có hợp lệ không
-        if (!senderId || !message || (!conversationId && !receiverId)) {
-            return res.status(400).send('Please fill all required fields');
+        const existingConversation = await Conversations.findOne({
+            participants: { $all: [senderId, receiverId] },
+            $expr: { $eq: [{ $size: "$participants" }, 2] } // Kiểm tra số lượng participants là 2
+        });
+        if (existingConversation){
+            conversation_id = existingConversation._id;
         }
-
-        // Kiểm tra nếu senderId và receiverId là ObjectId hợp lệ
-        if ((!conversationId && (!mongoose.Types.ObjectId.isValid(senderId) || !mongoose.Types.ObjectId.isValid(receiverId)))) {
-            return res.status(400).send('Invalid Sender ID or Receiver ID');
-        }
-
-        // Nếu conversationId không có, tạo cuộc trò chuyện mới
-        if (!conversationId) {
-            const newConversation = new Conversations({
-                participants: [senderId, receiverId]
-            });
-
+        else {
+            const newConversation = new Conversations({ participants: [senderId, receiverId] });
             await newConversation.save();
-
-            // Tạo tin nhắn mới với conversationId của cuộc trò chuyện vừa tạo
-            const newMessage = new Messages({
-                conversation_id: newConversation._id,
-                sender_id: senderId,
-                content: message,
-                created_at: Date.now(),
-                type: "text",
-                status: 'sent'
-            });
-
-            await newMessage.save();
-            return res.status(200).send('Message sent successfully');
-        } else {
-            // Nếu đã có conversationId, gửi tin nhắn trực tiếp vào cuộc trò chuyện đó
-            const newMessage = new Messages({
-                conversation_id: conversationId,
-                sender_id: senderId,
-                content: message,
-                created_at: Date.now(),
-                status: 'sent',
-                type: "text",
-            });
-
-            await newMessage.save();
-            res.status(200).send('Message sent successfully');
+            conversation_id = newConversation._id;
         }
+       
+        
+      } else if (conversationId) {
+        // Sử dụng `conversationId` đã có
+        conversation_id = conversationId;
+      } else {
+        return res.status(400).send('Please provide a valid conversation ID or receiver ID');
+      }
+  
+      // Tạo một tin nhắn mới
+      const newMessage = new Messages({
+        conversation_id,
+        sender_id: senderId,
+        content: type === 'text' ? message : null, // Chỉ đặt `content` nếu type là "text"
+        type,
+   
+        status: 'sent'
+      });
+  
+      await newMessage.save();
+      res.status(200).send('Message sent successfully');
     } catch (error) {
-        console.error('Error', error);
-        res.status(500).send('Error sending message');
+      console.log('MessageError', error);
+      res.status(500).send('Internal Server Error');
     }
-});
-
-app.get('/api/message/:conversationId', async (req, res) => {
+  });
+  
+  
+  
+  app.get('/api/message/:conversationId', async (req, res) => {
     try {
-        const conversationId = req.params.conversationId;
-
-        // Kiểm tra nếu `conversationId` là 'new' thì trả về mảng rỗng
-        if (conversationId === 'new') {
-            return res.status(200).json([]);
-        }
-
-        // Tìm tất cả tin nhắn thuộc `conversationId`
+      const checkMessages = async (conversationId) => {
+        console.log(conversationId, 'conversationId');
         const messages = await Messages.find({ conversation_id: conversationId });
-
-        // Lấy thông tin người gửi cho mỗi tin nhắn
-        const messageUserData = await Promise.all(messages.map(async (message) => {
-            const user = await Users.findById(message.sender_id);
+        console.log("messages", messages);
+        const messageUserData = await Promise.all(
+          messages.map(async (message) => {
             return {
-                user: {
-                    id: user.id,
-                    email: user.email,
-                    fullName: user.fullName
-                },
-                message: message.content, // Sử dụng `message.content` thay vì `message.message`
-                created_at: message.created_at,
-                status: message.status
+              user: { id: message.sender_id},
+              message: message.content,
             };
-        }));
-
-        // Trả về danh sách tin nhắn cùng thông tin người gửi
-        res.status(200).json(messageUserData);
+          })
+        );
+        
+        res.status(200).json(await messageUserData);
+      };
+  
+      const conversationId = req.params.conversationId;
+  
+      if (conversationId === 'new') {
+        const checkConversation = await Conversations.find({
+          participants: { $all: [req.query.senderId, req.query.receiverId] },
+        });
+        // console.log("check cvs: ", checkConversation);
+        if (checkConversation.length > 0) {
+          await checkMessages(checkConversation[0]._id);
+        } else {
+          return res.status(200).json([]);
+        }
+      } else {
+        await checkMessages(conversationId);
+      }
     } catch (error) {
-        console.error('Error', error);
-        res.status(500).send('Error retrieving messages');
+      console.log('Error', error);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
-});
+  });
+  
+  
 
-app.get('/api/users', async (req, res) => {
+  app.get('/api/users/:userId', async (req, res) => {
     try {
-        const users = await Users.find();
+      const userId = req.params.userId;
+  
+      // Lấy tất cả người dùng ngoại trừ người dùng có ID là userId
+      const users = await Users.find({ _id: { $ne: userId } });
+      
+      // Duyệt qua danh sách người dùng và tạo dữ liệu người dùng cần thiết
+     
 
-        // Trả về danh sách người dùng với thông tin cần thiết
-        const usersData = users.map(user => ({
-            email: user.email,
-            fullName: user.fullName,
-            userId: user._id
-        }));
-
-        res.status(200).json(usersData);
+      res.status(200).json(users);
     } catch (error) {
-        console.error('Error', error);
-        res.status(500).send('Error retrieving users');
+      console.log('Error', error);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
-});
+  });
+  
 
 
 app.listen(port, () => {
