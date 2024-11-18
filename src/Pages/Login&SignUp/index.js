@@ -10,6 +10,7 @@ const Form = ({ isSignInPage = true }) => {
         email: '',
         password: ''
     });
+    const [success, setSuccess] = useState('');
     const [error, setError] = useState(''); // Trạng thái để lưu thông báo lỗi
     const navigate = useNavigate();
     
@@ -28,9 +29,15 @@ const Form = ({ isSignInPage = true }) => {
     
             if (res.status === 400) {
                 setError((isSignInPage ? "User email or password is incorrect" : "User already exists"));
+                setSuccess("");
                 return;
             }
-    
+            
+            if (res.status === 201) {
+                setError("");
+                setSuccess("User registered successfully");
+                return;
+            }
     
             const resData = await res.json();
             console.log('data >>', resData);
@@ -62,6 +69,11 @@ const Form = ({ isSignInPage = true }) => {
                 {error && ( // Hiển thị pop-up lỗi nếu có lỗi
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative w-full mb-4 text-center" role="alert">
                         <strong className="font-bold">Error:</strong> <span className="block sm:inline">{error}</span>
+                    </div>
+                )}
+                {success && ( // Hiển thị pop-up lỗi nếu có lỗi
+                    <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative w-full mb-4 text-center" role="alert">
+                        <strong className="font-bold"></strong> <span className="block sm:inline">{success}</span>
                     </div>
                 )}
                 <form className='flex flex-col items-center w-full ml-6' onSubmit={handleSubmit}>

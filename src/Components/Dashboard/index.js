@@ -1,9 +1,15 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import userDefault from '../../Assets/userDefault.png'
 import Input from '../Input'
 
 const Dashboard = () => {
-    
+    const scrollRef = useRef(null);
+
+    useEffect(() => {
+        if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, []);
     useEffect(() => {
         const loggedInUser = JSON.parse(localStorage.getItem('user:detail'));
     
@@ -197,8 +203,8 @@ const Dashboard = () => {
                     </div>
             </div>
 }
-            <div className='h-full border w-full overflow-scroll'> 
-                <div className='h-[1000px] px-10 py-14'>
+            <div   className='h-full border w-full overflow-scroll'> 
+                <div ref={scrollRef} className='max-h px-10 py-14'>
                     {
                         messages?.messages?.length > 0 ?
                         messages.messages.map(({user: sender, message}) => {
@@ -240,7 +246,7 @@ const Dashboard = () => {
             
         </div>
         
-        <div className='w-[25%] h-full px-8 py-24'>
+        <div className='w-[25%] max-h overflow-y-auto px-8 py-24'>
         <div className='text-primary text-lg'>People</div>
         {
             users.length > 0 ? 
