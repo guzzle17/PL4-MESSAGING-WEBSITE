@@ -13,6 +13,9 @@ const ProtectedRoute = ({children}) => {
   return children;
 }
 
+// console.log(localStorage.getItem());
+// localStorage.clear(); // Xóa toàn bộ dữ liệu
+
 function App() {
   return (
     <Routes>
@@ -29,6 +32,11 @@ function App() {
           </div>
         </ProtectedRoute>
       }/>
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
       <Route path="/users/sign_in" element={<Form isSignInPage={true}/>} />
       <Route path="/users/sign_up" element={<Form isSignInPage={false}/>} />
     </Routes>
