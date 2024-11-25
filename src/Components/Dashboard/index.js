@@ -1,15 +1,49 @@
 import React, { useEffect, useState, useRef } from 'react'
 import userDefault from '../../Assets/userDefault.png'
 import Input from '../Input'
-
+import {io} from 'socket.io-client'
 const Dashboard = () => {
     const scrollRef = useRef(null);
+    const [user, setUser] = useState(JSON.parse(localStorage.getItem('user:detail')))
+    const [conversations, setConversations] = useState([])
+    const [messages, setMessages] = useState(["", "", ""]);
+    const [message, setMessage] = useState("");
+    const [users, setUsers] = useState([]);
+    const [socket, setSocket] = useState(null);
+
+    useEffect(() => {
+        console.log("connect");
+        setSocket(io('http://localhost:8000'))
+        console.log("a")
+    }, [])
+
+    useEffect(() => {
+        socket?.emit('addUser', user?.id);
+
+        console.log("check2")
+        socket?.on('getUsers', users =>{
+            console.log('active Users: ', users);
+        })
+
+        const handleGetMessage = (data) => {
+            console.log('data =>', data);
+            console.log('socket: ', socket)
+            // setMessages((prev) => ({
+            //     ...prev,
+            //     messages: [...prev.messages, { user: data.user, message: data.message }]
+            // }));
+            console.log("messages: ", messages);
+        };
+        console.log(socket)
+        socket?.on('getMessage', handleGetMessage);
+
+    }, [socket])
 
     useEffect(() => {
         if (scrollRef.current) {
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
-    }, []);
+    }, [messages]);
     useEffect(() => {
         const loggedInUser = JSON.parse(localStorage.getItem('user:detail'));
     
@@ -27,18 +61,13 @@ const Dashboard = () => {
             });
     
             const resData = await res.json();
-            console.log("resData >> ", resData[0]);
+            // console.log("resData >> ", resData[0]);
             setConversations(resData)
         };
     
         fetchConversations();
     }, []);
-    const [user, setUser] = useState(JSON.parse(localStorage.getItem('user:detail')))
-    const [conversations, setConversations] = useState([])
-    const [messages, setMessages] = useState([]);
-    const [message, setMessage] = useState("");
-    const [users, setUsers] = useState([]);
-
+    
     useEffect(() => {
         const fetchUsers = async () => {
           try {
@@ -99,7 +128,7 @@ const Dashboard = () => {
           console.log('resData:', resData);
       
           setMessages({ messages: resData, receiver, conversationId });
-          console.log("Messages: ", messages);
+        //   console.log("Messages: ", messages);
         } catch (error) {
           console.error('Error fetching messages:', error);
         }
@@ -108,7 +137,7 @@ const Dashboard = () => {
     
     const sendMessage = async (e) => {
         e.preventDefault();
-        console.log("check", messages.receiver, user?.id, message);
+        // console.log("check", messages.receiver, user?.id, message);
 
         if (!messages?.receiver?._id || !user?.id || !message) {
             console.error("Missing required fields: conversationId, senderId, message, or receiverId");
@@ -116,6 +145,12 @@ const Dashboard = () => {
         }
 
         try {
+            socket?.emit('sendMessage', {
+                senderId: user?.id,
+                receiverId: messages?.receiver?._id,
+                message,
+                conversationId: messages?.conversationId,
+            });
             const res = await fetch('http://localhost:8000/api/message', {
                 method: 'POST',
                 headers: {
@@ -136,7 +171,7 @@ const Dashboard = () => {
 
             // Clear the message input after successful send
             setMessage(''); // Set to empty string instead of an empty array
-            console.log("mess :", message);
+            // console.log("mess :", message);
             // fetchMessages(messages.conversationId, messages.receiver)
         } catch (error) {
             console.error("Error sending message:", error);

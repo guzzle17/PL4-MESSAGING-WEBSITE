@@ -1,14 +1,105 @@
 const express = require('express')
 const cors = require('cors'); // Import cors
 
-const app = express();
-
-app.use(cors()); 
-require('./db/connection')
-
 const Users = require('./Models/users');
 const Conversations = require('./Models/conversations'); // Đường dẫn chính xác đến file Conversation.js
 const Messages = require('./Models/messages');
+
+const app = express();
+app.use(cors({
+  origin: 'http://localhost:3000', // Cho phép từ localhost:3000
+  methods: ['GET', 'POST'], // Phương thức được phép
+}));
+require('./db/connection')
+
+const server = require('http').createServer(app);
+const io = require('socket.io')(server, {
+  cors: {
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+  },
+});
+
+let users = []
+io.on('connection', socket =>{
+  console.log("User connected", socket.id);
+
+  console.log('conect', users)
+  socket.on('addUser', userId => {
+    const isAlreadyExist = users.find(user => user.userId === userId);
+    console.log(isAlreadyExist, "aaa")
+    if (!isAlreadyExist){
+      const user = {userId, socketId: socket.id};
+      users.push(user);
+      io.emit('getUsers', users);
+    }
+  })
+
+  // socket.on('sendMessage', async ({ senderId, receiverId, message, conversationId }) => {
+  //   const receiver = users.find(user => user.userId === receiverId);
+  //   const sender = users.find(user => user.userId === senderId);
+  //   const user = await Users.findById(senderId);
+  //   if (receiver && sender) {
+  //     io.to(receiver.socketId).to(sender.socketId).emit('getMessage', {
+  //       senderId,
+  //       message,
+  //       conversationId,
+  //       receiverId,
+  //       user: user
+  //     });
+  //     console.log(`Message sent from ${senderId} to ${receiverId}:`, message);
+  //   } else {
+  //     console.error("Receiver or sender not found.");
+  //   }
+  // });
+  socket.on('sendMessage', async ({ senderId, receiverId, message, conversationId }) => {
+    try {
+        const receiver = users.find(user => user.userId === receiverId);
+        const sender = users.find(user => user.userId === senderId);
+
+        // Lấy thông tin từ DB
+        const user = await Users.findById(senderId);
+        if (!user) {
+            console.error(`Sender not found in database with ID: ${senderId}`);
+            return;
+        }
+        console.log("receiver: ", receiver);
+        if (receiver) {
+            console.log(receiver.userId, sender.userId)
+            io.to(receiver.socketId).to(sender.socketId).emit('getMessage', {
+                senderId,
+                message,
+                conversationId,
+                receiverId,
+                user: {
+                    id: user._id,
+                    fullName: user.fullName,
+                    email: user.email
+                }
+            });
+            console.log(`Message sent from ${senderId} to ${receiverId}:`, message);
+        } else {
+            console.error(`Receiver with ID: ${receiverId} not found`);
+        }
+    } catch (error) {
+        console.error('Error in sendMessage event:', error.message);
+    }
+});
+
+  socket.on('disconnect', () => {
+    console.log(`User disconnected: ${socket.id}`);
+    users = users.filter(user => user.socketId !== socket.id);
+    console.log("Updated user list after disconnect:", users);
+    io.emit('getUsers', users);
+});
+})
+
+
+
+
+
+
+
 
 
 app.use(express.json());
@@ -32,7 +123,7 @@ const { type } = require('@testing-library/user-event/dist/type');
 
 app.post('/api/register', async (req, res) => {
     try {
-        console.log("Body content:", req.body); // Kiểm tra dữ liệu nhận được
+        // console.log("Body content:", req.body); // Kiểm tra dữ liệu nhận được
 
         const { fullName, email, password } = req.body;
         if (!fullName || !email || !password) {
@@ -61,7 +152,7 @@ app.post('/api/register', async (req, res) => {
 
 app.post('/api/login', async (req, res) => {
     try {
-        console.log(req.body); // Kiểm tra dữ liệu nhận được
+        // console.log(req.body); // Kiểm tra dữ liệu nhận được
 
         const { email, password } = req.body;
         
@@ -175,7 +266,7 @@ app.get('/api/conversation/:userId', async (req, res) => {
         // Lọc bỏ các giá trị null (nếu có)
         const filteredConversationData = conversationUserData.filter(data => data !== null);
 
-        console.log('conversationUserData:', filteredConversationData);
+        // console.log('conversationUserData:', filteredConversationData);
         res.status(200).json(filteredConversationData);
     } catch (error) {
         console.error(error);
@@ -242,10 +333,10 @@ app.get('/api/conversation/:userId', async (req, res) => {
 
 app.post('/api/message', async (req, res) => {
 
-    console.log("reqBody:", req.body);
+    // console.log("reqBody:", req.body);
     try {
       const { conversationId, senderId, message,receiverId = '' } = req.body;
-      console.log(conversationId, senderId, message,receiverId);
+      // console.log(conversationId, senderId, message,receiverId);
       const type = "text";
         
       // Kiểm tra các trường yêu cầu
@@ -300,9 +391,9 @@ app.post('/api/message', async (req, res) => {
   app.get('/api/message/:conversationId', async (req, res) => {
     try {
       const checkMessages = async (conversationId) => {
-        console.log(conversationId, 'conversationId');
+        // console.log(conversationId, 'conversationId');
         const messages = await Messages.find({ conversation_id: conversationId });
-        console.log("messages", messages);
+        // console.log("messages", messages);
         const messageUserData = await Promise.all(
           messages.map(async (message) => {
             return {
@@ -357,6 +448,6 @@ app.post('/api/message', async (req, res) => {
   
 
 
-app.listen(port, () => {
-    console.log("Listening on port " + port);
-})
+server.listen(port, () => {
+  console.log("Listening on port " + port);
+});
