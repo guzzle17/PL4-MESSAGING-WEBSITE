@@ -11,10 +11,129 @@ const Dashboard = () => {
 	const [users, setUsers] = useState([])
 	const [socket, setSocket] = useState(null)
 	const messageRef = useRef(null)
+	// zoom img
+	const [isModalOpen, setIsModalOpen] = useState(false);
+    const [currentImage, setCurrentImage] = useState('');
+
+    const openModal = (imageUrl) => {
+        setCurrentImage(imageUrl);
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+    };
+
+	//end zoom img
 
 	const [file, setFile] = useState(null);
 
 	const [previewUrl, setPreviewUrl] = useState(null);
+
+
+	/* add group*/
+	const [filteredUsers, setFilteredUsers] = useState([]); // Dữ liệu đã lọc
+	const [searchQuery, setSearchQuery] = useState(''); // Giá trị tìm kiếm
+	const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+	// Lấy danh sách người dùng từ API
+	// useEffect(() => {
+	// 	const fetchUsers = async () => {
+	// 		const res = await fetch(`http://localhost:8000/api/users/${user?.id}`, {
+	// 			method: 'GET',
+	// 			headers: {
+	// 				'Content-Type': 'application/json',
+	// 			},
+	// 		});
+	// 		const resData = await res.json();
+
+	// 		// Cập nhật state
+	// 		setUsers(resData); 
+	// 		setFilteredUsers(resData); // Hiển thị toàn bộ lúc đầu
+	// 	};
+	// 	fetchUsers();
+	// }, [user]);
+
+	// Xử lý tìm kiếm
+	useEffect(() => {
+		if (searchQuery) {
+			
+			const filtered = users.filter((u) => 
+				u.user.fullName.toLowerCase().includes(searchQuery.toLowerCase())
+			);			
+			console.log("check full Name", users, filtered	)
+			const usersList = filtered.map((item) => item.user);
+        	setFilteredUsers(usersList);
+			// setFilteredUsers(filtered);
+		} else {
+			const usersList = users.map((item) => item.user);
+        	setFilteredUsers(usersList);
+			// setFilteredUsers(users);
+			// console.log("a", users)
+		}
+	}, [searchQuery, users]);
+
+	const [selectedMembers, setSelectedMembers] = useState([]); // Danh sách thành viên đã chọn
+
+	const handleToggleMember = (member) => {
+		if (selectedMembers.includes(member)) {
+			setSelectedMembers(selectedMembers.filter((m) => m !== member));
+		} else {
+			setSelectedMembers([...selectedMembers, member]);
+		}
+	};
+
+
+	
+	const handleCreateGroup = async () => {
+		if (!selectedMembers || selectedMembers.length === 0) {
+			alert('Vui lòng chọn ít nhất một thành viên.');
+			return;
+		}
+	
+		try {
+			const response = await fetch('http://localhost:8000/api/conversation', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					senderId: user?.id,
+					receiverId: selectedMembers.map((m) => m.userId),
+					isGroup: true,
+					groupName: "Nhóm của tôi", // Tên nhóm mặc định
+				}),
+			});
+	
+			if (response.ok) {
+				const newGroup = await response.json();
+				alert('Nhóm đã được tạo thành công!');
+				
+				// Cập nhật danh sách hội thoại
+				setConversations([...conversations, newGroup]);
+				
+				// Reset trạng thái modal và danh sách
+				setShowCreateGroupModal(false);
+				setSelectedMembers([]);
+				setSearchQuery('');
+			} else {
+				const error = await response.json();
+				console.error('Failed to create group:', error.message);
+				alert('Đã xảy ra lỗi khi tạo nhóm. Vui lòng thử lại.');
+			}
+		} catch (err) {
+			console.error('Error creating group:', err);
+			alert('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.');
+		}
+	};
+	
+
+
+
+
+
+
+
+
 
 	const handleFileSelect = (e) => {
 		const selectedFile = e.target.files[0];
@@ -61,19 +180,26 @@ const Dashboard = () => {
 	}, [messages?.messages])
 
 	useEffect(() => {
-		const loggedInUser = JSON.parse(localStorage.getItem('user:detail'))
+		const loggedInUser = JSON.parse(localStorage.getItem('user:detail'));
+	
 		const fetchConversations = async () => {
 			const res = await fetch(`http://localhost:8000/api/conversations/${loggedInUser?.id}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
-				}
+				},
 			});
-			const resData = await res.json()
-			setConversations(resData)
-		}
-		fetchConversations()
-	}, [])
+			const resData = await res.json();
+	
+			// Kiểm tra dữ liệu trả về
+			console.log('Conversations:', resData);
+	
+			setConversations(resData);
+		};
+	
+		fetchConversations();
+	}, []);
+	
 
 	useEffect(() => {
 		const fetchUsers = async () => {
@@ -85,6 +211,11 @@ const Dashboard = () => {
 			});
 			const resData = await res.json()
 			setUsers(resData)
+
+			const usersList = resData.map((item) => item.user);
+        	setFilteredUsers(usersList);// Hiển thị toàn bộ lúc đầu
+			console.log(resData);
+			console.log(users);
 		}
 		fetchUsers()
 	}, [])
@@ -157,28 +288,126 @@ const Dashboard = () => {
 						<h3 className='text-2xl'>{user?.fullName}</h3>
 						<p className='text-lg font-light'>My Account</p>
 					</div>
+
+
+					{/*  */}
+					<div className='ml-10 flex justify-between items-center'>
+						<button
+							className='bg-primary text-white px-4 py-2 rounded'
+							onClick={() => {setShowCreateGroupModal(true); setSelectedMembers([])}}
+						>
+							Create new group
+						</button>
+					</div>
+
+					{showCreateGroupModal && (
+						<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+							<div className="bg-white w-[500px] p-6 rounded shadow-lg">
+								<h2 className="text-xl font-bold mb-4">Create new group</h2>
+								<input
+									type="text"
+									placeholder="Tìm kiếm thành viên"
+									className="w-full border p-2 rounded mb-4"
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+								/>
+								{(filteredUsers) && <div className="max-h-[300px] overflow-y-auto">
+									{filteredUsers.map((user ) => (
+										<div
+											key={user.userId}
+											className="flex items-center justify-between border-b p-2"
+										>
+											<div className="flex items-center">
+												<img
+													src={userDefault}
+													className="w-10 h-10 rounded-full mr-2"
+													alt="User"
+												/>
+												<div>
+													<span className="block font-semibold">{user.fullName}</span>
+													<span className="block text-sm text-gray-600">{user.email}</span>
+												</div>
+											</div>
+											<button
+												className="text-primary"
+												onClick={() => handleToggleMember(user)}
+											>
+												{selectedMembers.includes(user) ? "Remove" : "Add"}
+											</button>
+										</div>
+									))}
+								</div>}
+
+								<div className="mt-4 flex justify-end">
+									<button
+										className="bg-gray-300 text-black px-4 py-2 rounded mr-2"
+										onClick={() => setShowCreateGroupModal(false)}
+									>
+										Hủy
+									</button>
+									<button
+										className="bg-primary text-white px-4 py-2 rounded"
+										onClick={handleCreateGroup}
+									>
+										Create new group
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{/*  */}
 				</div>
 				<hr />
 				<div className='mx-14 mt-10'>
 					<div className='text-primary text-lg'>Messages</div>
 					<div>
-						{
-							conversations.length > 0 ?
-								conversations.map(({ conversationId, user }) => {
-									return (
-										<div className='flex items-center py-8 border-b border-b-gray-300'>
-											<div className='cursor-pointer flex items-center' onClick={() => fetchMessages(conversationId, user)}>
-												<div><img src={userDefault} className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary" /></div>
-												<div className='ml-6'>
-													<h3 className='text-lg font-semibold'>{user?.fullName}</h3>
-													<p className='text-sm font-light text-gray-600'>{user?.email}</p>
-												</div>
-											</div>
-										</div>
-									)
-								}) : <div className='text-center text-lg font-semibold mt-24'>No Conversations</div>
-						}
-					</div>
+    {conversations.length > 0 ? (
+        conversations.map(({ conversationId, isGroup, user, groupName, members }) => (
+            <div
+                key={conversationId}
+                className="flex items-center py-8 border-b border-b-gray-300"
+            >
+                {isGroup ? (
+                    // Hiển thị nhóm
+                    <div
+                        className="cursor-pointer flex items-center"
+                        onClick={() => fetchMessages(conversationId, { groupName, members })}
+                    >
+                        <div className="w-[60px] h-[60px] bg-primary rounded-full flex items-center justify-center text-white font-bold">
+                            {groupName.charAt(0)}
+                        </div>
+                        <div className="ml-6">
+                            <h3 className="text-lg font-semibold">{groupName}</h3>
+                            <p className="text-sm font-light text-gray-600">
+                                {members.length} thành viên
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    // Hiển thị hội thoại cá nhân
+                    <div
+                        className="cursor-pointer flex items-center"
+                        onClick={() => fetchMessages(conversationId, user)}
+                    >
+                        <img
+                            src={userDefault}
+                            className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
+                            alt="User Avatar"
+                        />
+                        <div className="ml-6">
+                            <h3 className="text-lg font-semibold">{user?.fullName}</h3>
+                            <p className="text-sm font-light text-gray-600">{user?.email}</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+        ))
+    ) : (
+        <div className="text-center text-lg font-semibold mt-24">No Conversations</div>
+    )}
+</div>
+
 				</div>
 			</div>
 			<div className='w-[50%] h-screen bg-white flex flex-col items-center'>
@@ -205,15 +434,36 @@ const Dashboard = () => {
 						{
 							messages?.messages?.length > 0 ? (
 								messages.messages.map(({ message, type, file_url, user: { id } = {} }, index) => (
-									<div key={index} className={`max-w-[40%] rounded-b-xl p-4 mb-6 w-fit break-words ${id === user?.id ? 'bg-primary text-white rounded-tl-xl ml-auto' : 'bg-secondary rounded-tr-xl'}`}>
-										{message && <p className = {`mb-2`}>{message}</p>}
-										{type === 'image' && <img src={`http://localhost:8000${file_url}`} alt="Image" className="max-w-full rounded" />}
+									<div key={index} className={`max-w-[40%] rounded-b-xl p-1 mb-6 w-fit break-words ${id === user?.id ? 'bg-primary text-white rounded-tl-xl ml-auto' : 'bg-secondary rounded-tr-xl'}`}>
+										{message && <p className = {`ml-4 mr-4 mt-2 mb-2`}>{message}</p>}
+										{type === 'image' && <img src={`http://localhost:8000${file_url}`} alt="Image" className="max-w-full rounded cursor-pointer" onClick={() => openModal(`http://localhost:8000${file_url}`)} />}
 										{type === 'file' && (
 											<a href={`http://localhost:8000${file_url}`} target="_blank" rel="noopener noreferrer" className="text-white-600 underline">
 												{file_url.substring(8)}
 											</a>
 										)}
 										{<div ref={messageRef}></div>}
+										
+										{isModalOpen && (
+											<div
+												className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300"
+												onClick={closeModal}
+											>
+												{/* Nút đóng */}
+												<button
+													className="absolute top-5 right-5 text-white text-3xl cursor-pointer"
+													onClick={closeModal}
+												>
+													&times;
+												</button>
+												{/* Ảnh phóng to */}
+												<img
+													src={currentImage}
+													alt="Zoomed"
+													className="max-w-[90%] max-h-[90%] rounded-lg shadow-lg"
+												/>
+											</div>
+										)}
 									</div>
 								))
 							) : (

@@ -160,31 +160,88 @@ app.post('/api/login', async (req, res, next) => {
     }
 })
 
+
+
 app.post('/api/conversation', async (req, res) => {
     try {
-        const { senderId, receiverId } = req.body;
-        const newCoversation = new Conversations({ members: [senderId, receiverId] });
-        await newCoversation.save();
-        res.status(200).send('Conversation created successfully');
+        const { senderId, receiverId, isGroup, groupName } = req.body;
+
+        if (!isGroup || !receiverId || !senderId || !groupName) {
+            return res.status(400).send('Invalid group data');
+        }
+
+        const newConversation = new Conversations({
+            members: [senderId, ...receiverId],
+            isGroup: true,
+            groupName,
+            admins: [senderId], // Người tạo nhóm là quản trị viên mặc định
+        });
+
+        await newConversation.save();
+
+        res.status(200).json({
+            conversationId: newConversation._id,
+            groupName: newConversation.groupName,
+            members: newConversation.members,
+            admins: newConversation.admins,
+        });
     } catch (error) {
-        console.log(error, 'Error')
+        console.error('Error creating group:', error);
+        res.status(500).send('Internal Server Error');
     }
-})
+});
+
+
+
+
+
 
 app.get('/api/conversations/:userId', async (req, res) => {
     try {
         const userId = req.params.userId;
+
+        // Lấy tất cả các cuộc hội thoại của userId
         const conversations = await Conversations.find({ members: { $in: [userId] } });
-        const conversationUserData = Promise.all(conversations.map(async (conversation) => {
-            const receiverId = conversation.members.find((member) => member !== userId);
-            const user = await Users.findById(receiverId);
-            return { user: { receiverId: user._id, email: user.email, fullName: user.fullName }, conversationId: conversation._id }
-        }))
-        res.status(200).json(await conversationUserData);
+
+        // Xử lý dữ liệu trả về
+        const conversationUserData = await Promise.all(
+            conversations.map(async (conversation) => {
+                if (conversation.isGroup) {
+                    // Nếu là nhóm, trả về thông tin nhóm
+                    const members = await Users.find(
+                        { _id: { $in: conversation.members } },
+                        'fullName email'
+                    );
+                    return {
+                        isGroup: true,
+                        groupName: conversation.groupName,
+                        conversationId: conversation._id,
+                        members,
+                    };
+                } else {
+                    // Nếu là hội thoại cá nhân, tìm người nhận
+                    const receiverId = conversation.members.find((member) => member.toString() !== userId);
+                    const user = await Users.findById(receiverId, 'fullName email');
+                    return {
+                        isGroup: false,
+                        user: {
+                            receiverId: user._id,
+                            email: user.email,
+                            fullName: user.fullName,
+                        },
+                        conversationId: conversation._id,
+                    };
+                }
+            })
+        );
+
+        res.status(200).json(conversationUserData);
     } catch (error) {
-        console.log(error, 'Error')
+        console.error('Error fetching conversations:', error);
+        res.status(500).send('Internal Server Error');
     }
-})
+});
+
 app.post('/api/message', upload.single('file'), async (req, res) => {
     try {
         const { conversationId, senderId, message, receiverId = '' } = req.body;
