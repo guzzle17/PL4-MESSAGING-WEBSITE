@@ -2,11 +2,29 @@ const express = require('express');
 const bcryptjs = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
 const io = require('socket.io')(8080, {
     cors: {
-        origin: 'http://localhost:3000',
+        origin: '*',
     }
 });
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'uploads/'); // Thư mục lưu tệp
+    },
+    filename: function (req, file, cb) {
+      // Lấy phần mở rộng của tệp
+      const ext = path.extname(file.originalname);
+      // Tạo tên tệp mới dựa trên thời gian hiện tại và tên gốc
+      const filename = Date.now() + '-' + file.originalname;
+      cb(null, filename);
+    },
+  });
+
+
+const upload = multer({ storage: storage });
 
 // Connect DB
 require('./db/connection');
@@ -17,10 +35,18 @@ const Conversations = require('./Models/conversations');
 const Messages = require('./Models/messages');
 
 // app Use
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cors());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+const corsOptions = {
+    origin: '*',
+   
+};
+
+app.use(cors(corsOptions));
 
 const port = process.env.PORT || 8000;
 
@@ -37,31 +63,29 @@ io.on('connection', socket => {
         }
     });
 
-    socket.on('sendMessage', async ({ senderId, receiverId, message, conversationId }) => {
+    socket.on('sendMessage', async ({ senderId, receiverId, message, conversationId, type, file_url }) => {
         const receiver = users.find(user => user.userId === receiverId);
         const sender = users.find(user => user.userId === senderId);
         const user = await Users.findById(senderId);
-        console.log('sender :>> ', sender, receiver);
+      
+        const messageData = {
+          senderId,
+          message,
+          conversationId,
+          receiverId,
+          user: { id: user._id, fullName: user.fullName, email: user.email },
+          type,
+          file_url,
+        };
+      
         if (receiver) {
-            io.to(receiver.socketId).to(sender.socketId).emit('getMessage', {
-                senderId,
-                message,
-                conversationId,
-                receiverId,
-                user: { id: user._id, fullName: user.fullName, email: user.email }
-            });
-            }else {
-                io.to(sender.socketId).emit('getMessage', {
-                    senderId,
-                    message,
-                    conversationId,
-                    receiverId,
-                    user: { id: user._id, fullName: user.fullName, email: user.email }
-                });
-            }
-        });
-
+          io.to(receiver.socketId).to(sender.socketId).emit('getMessage', messageData);
+        } else {
+          io.to(sender.socketId).emit('getMessage', messageData);
+        }
+      });
     socket.on('disconnect', () => {
+        console.log("active users left ", users);
         users = users.filter(user => user.socketId !== socket.id);
         io.emit('getUsers', users);
     });
@@ -161,54 +185,98 @@ app.get('/api/conversations/:userId', async (req, res) => {
         console.log(error, 'Error')
     }
 })
-
-app.post('/api/message', async (req, res) => {
+app.post('/api/message', upload.single('file'), async (req, res) => {
     try {
         const { conversationId, senderId, message, receiverId = '' } = req.body;
-        if (!senderId || !message) return res.status(400).send('Please fill all required fields')
-        if (conversationId === 'new' && receiverId) {
-            const newCoversation = new Conversations({ members: [senderId, receiverId] });
-            await newCoversation.save();
-            const newMessage = new Messages({ conversationId: newCoversation._id, senderId, message });
-            await newMessage.save();
-            return res.status(200).send('Message sent successfully');
-        } else if (!conversationId && !receiverId) {
-            return res.status(400).send('Please fill all required fields')
+        const file = req.file;
+        let file_url = null;
+        let type = 'text';
+    
+        if (file) {
+          // Lưu đường dẫn tệp với tên và phần mở rộng
+          file_url = `/uploads/${file.filename}`;
+    
+          // Xác định loại tệp dựa trên mime type
+          if (file.mimetype.startsWith('image/')) {
+            type = 'image';
+          } else {
+            type = 'file';
+          }
         }
-        const newMessage = new Messages({ conversationId, senderId, message });
+  
+      if (!senderId || (!message && !file))
+        return res.status(400).send('Please fill all required fields');
+  
+      if (conversationId === 'new' && receiverId) {
+        const newConversation = new Conversations({
+          members: [senderId, receiverId],
+        });
+        await newConversation.save();
+        const newMessage = new Messages({
+          conversationId: newConversation._id,
+          senderId,
+          message,
+          type,
+          file_url,
+        });
         await newMessage.save();
-        res.status(200).send('Message sent successfully');
+        return res.status(200).json({ message: newMessage });
+      } else if (!conversationId && !receiverId) {
+        return res.status(400).send('Please fill all required fields');
+      }
+      const newMessage = new Messages({
+        conversationId,
+        senderId,
+        message,
+        type,
+        file_url,
+      });
+      await newMessage.save();
+      res.status(200).json({ message: newMessage });
     } catch (error) {
-        console.log(error, 'Error')
+      console.log(error, 'Error');
+      res.status(500).send('Internal Server Error');
     }
-})
+  });
 
-app.get('/api/message/:conversationId', async (req, res) => {
+  app.get('/api/message/:conversationId', async (req, res) => {
     try {
+        const { conversationId } = req.params;
+
         const checkMessages = async (conversationId) => {
-            console.log(conversationId, 'conversationId')
-            const messages = await Messages.find({ conversationId });
-            const messageUserData = Promise.all(messages.map(async (message) => {
-                const user = await Users.findById(message.senderId);
-                return { user: { id: user._id, email: user.email, fullName: user.fullName }, message: message.message }
-            }));
-            res.status(200).json(await messageUserData);
-        }
-        const conversationId = req.params.conversationId;
+            const messages = await Messages.find({ conversationId }).lean();
+            const messageUserData = await Promise.all(
+                messages.map(async (message) => {
+                    const user = await Users.findById(message.senderId);
+                    return {
+                        user: { id: user._id, email: user.email, fullName: user.fullName },
+                        message: message.message,
+                        type: message.type,
+                        file_url: message.file_url,
+                    };
+                })
+            );
+            res.status(200).json(messageUserData);
+        };
+
         if (conversationId === 'new') {
-            const checkConversation = await Conversations.find({ members: { $all: [req.query.senderId, req.query.receiverId] } });
+            const checkConversation = await Conversations.find({
+                members: { $all: [req.query.senderId, req.query.receiverId] },
+            });
             if (checkConversation.length > 0) {
                 checkMessages(checkConversation[0]._id);
             } else {
-                return res.status(200).json([])
+                res.status(200).json([]);
             }
         } else {
             checkMessages(conversationId);
         }
     } catch (error) {
-        console.log('Error', error)
+        console.error('Error fetching messages:', error);
+        res.status(500).send('Internal Server Error');
     }
-})
+});
+
 
 app.get('/api/users/:userId', async (req, res) => {
     try {

@@ -6,7 +6,7 @@ const ConversationSchema = new mongoose.Schema({
         required: true,
     },
     groupName: { type: String },
-    isGroupChat: { type: Boolean, default: false },
+    isGroup: { type: Boolean, default: false },
     last_message: { type: mongoose.Schema.Types.ObjectId, ref: 'Message' },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }

@@ -6,11 +6,30 @@ import {io} from 'socket.io-client'
 const Dashboard = () => {
 	const [user, setUser] = useState(JSON.parse(localStorage.getItem('user:detail')))
 	const [conversations, setConversations] = useState([])
-	const [messages, setMessages] = useState({})
+	const [messages, setMessages] = useState(["", "", ""])
 	const [message, setMessage] = useState('')
 	const [users, setUsers] = useState([])
 	const [socket, setSocket] = useState(null)
 	const messageRef = useRef(null)
+
+	const [file, setFile] = useState(null);
+
+	const [previewUrl, setPreviewUrl] = useState(null);
+
+	const handleFileSelect = (e) => {
+		const selectedFile = e.target.files[0];
+		if (selectedFile) {
+		  setFile(selectedFile);
+	  
+		  // Generate a preview URL if the file is an image
+		  if (selectedFile.type.startsWith('image/')) {
+			const url = URL.createObjectURL(selectedFile);
+			setPreviewUrl(url);
+		  } else {
+			setPreviewUrl(null); // No preview for non-image files
+		  }
+		}
+	  };
 
 	useEffect(() => {
 		setSocket(io('http://localhost:8080'))
@@ -21,12 +40,20 @@ const Dashboard = () => {
 		socket?.on('getUsers', users => {
 			console.log('activeUsers :>> ', users);
 		})
-		socket?.on('getMessage', data => {
-			setMessages(prev => ({
+		socket?.on('getMessage', (data) => {
+			setMessages((prev) => ({
 				...prev,
-				messages: [...prev.messages, { user: data.user, message: data.message }]
-			}))
-		})
+				messages: [
+					...prev.messages,
+					{
+						user: data.user,
+						message: data.message,
+						type: data.type,
+						file_url: data.file_url,
+					},
+				],
+			}));
+		});
 	}, [socket])
 
 	useEffect(() => {
@@ -70,31 +97,57 @@ const Dashboard = () => {
 			}
 		});
 		const resData = await res.json()
-		setMessages({ messages: resData, receiver, conversationId })
+		//resData: { user: { id: user._id, email: user.email, fullName: user.fullName }, message: message.message, type: message.type, file_url: message.file_url }
+		setMessages({ messages: resData, receiver, conversationId }) 
 	}
 
-	const sendMessage = async (e) => {
-		setMessage('')
-		socket?.emit('sendMessage', {
-			senderId: user?.id,
-			receiverId: messages?.receiver?.receiverId,
-			message,
-			conversationId: messages?.conversationId
-		});
+	const sendMessage = async () => {
+		if (!message && !file) {
+			// Không gửi nếu không có nội dung và không có tệp
+			return;
+		}
+	
+		const formData = new FormData();
+		formData.append('conversationId', messages?.conversationId);
+		formData.append('senderId', user?.id);
+		formData.append('receiverId', messages?.receiver?.receiverId);
+	
+		if (message) {
+			formData.append('message', message);
+		}
+	
+		if (file) {
+			formData.append('file', file);
+		}
+	
 		const res = await fetch(`http://localhost:8000/api/message`, {
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				conversationId: messages?.conversationId,
-				senderId: user?.id,
-				message,
-				receiverId: messages?.receiver?.receiverId
-			})
+			body: formData,
 		});
-	}
-
+	
+		const data = await res.json();
+		// console.log(data.message.type);
+		// console.log(data.message.file_url);
+		if (res.ok) {
+			// Gửi tin nhắn qua socket
+			socket?.emit('sendMessage', {
+				senderId: user?.id,
+				receiverId: messages?.receiver?.receiverId,
+				message: data.message.message,
+				conversationId: messages?.conversationId,
+				type: data.message.type,
+				file_url: data.message.file_url,
+			});
+		} else {
+			console.error('Failed to send message');
+		}
+	
+		// Reset state
+		setMessage('');
+		setFile(null);
+	};
+	
+	  
 	return (
 		<div className='w-screen flex'>
 			<div className='w-[25%] h-screen bg-secondary overflow-scroll'>
@@ -150,37 +203,96 @@ const Dashboard = () => {
 				<div className='h-[75%] w-full overflow-scroll shadow-sm'>
 					<div className='p-14'>
 						{
-							messages?.messages?.length > 0 ?
-								messages.messages.map(({ message, user: { id } = {} }) => {
-									return (
-										<>
-										<div className={`max-w-[40%] rounded-b-xl p-4 mb-6 w-fit break-words mb-2 ${id === user?.id ? 'bg-primary text-white rounded-tl-xl ml-auto' : 'bg-secondary rounded-tr-xl'} `}>{message}</div>
-										<div ref={messageRef}></div>
-										</>
-									)
-								}) : <div className='text-center text-lg font-semibold mt-24'>No Messages or No Conversation Selected</div>
+							messages?.messages?.length > 0 ? (
+								messages.messages.map(({ message, type, file_url, user: { id } = {} }, index) => (
+									<div key={index} className={`max-w-[40%] rounded-b-xl p-4 mb-6 w-fit break-words ${id === user?.id ? 'bg-primary text-white rounded-tl-xl ml-auto' : 'bg-secondary rounded-tr-xl'}`}>
+										{message && <p className = {`mb-2`}>{message}</p>}
+										{type === 'image' && <img src={`http://localhost:8000${file_url}`} alt="Image" className="max-w-full rounded" />}
+										{type === 'file' && (
+											<a href={`http://localhost:8000${file_url}`} target="_blank" rel="noopener noreferrer" className="text-white-600 underline">
+												{file_url.substring(8)}
+											</a>
+										)}
+										{<div ref={messageRef}></div>}
+									</div>
+								))
+							) : (
+								<div className='text-center text-lg font-semibold mt-24'>No Messages or No Conversation Selected</div>
+							)
 						}
 					</div>
 				</div>
+
 				{
 					messages?.receiver?.fullName &&
 					<div className='p-14 w-full flex items-center'>
-						<Input placeholder='Type a message...' value={message} onChange={(e) => setMessage(e.target.value)} className='w-[100%]' inputClassName='p-4 border-0 shadow-md rounded-full bg-light focus:ring-0 focus:border-0 outline-none w-[99%]' />
-						<div className={`ml-4 p-2 cursor-pointer bg-light rounded-full ${!message && 'pointer-events-none'}`} onClick={() => sendMessage()}>
+						<Input placeholder='Type a message...' value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => {         if (e.key === 'Enter') {           sendMessage();       }       }} className='w-[100%]' inputClassName='p-4 border-0 shadow-md rounded-full bg-light focus:ring-0 focus:border-0 outline-none w-[99%]' />
+						<div className={`ml-4 p-2 cursor-pointer bg-light rounded-full ${(!message && !file) && 'pointer-events-none'}`} onClick={() => sendMessage()}>
 							<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-send" width="30" height="30" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none" stroke-linecap="round" stroke-linejoin="round">
 								<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 								<line x1="10" y1="14" x2="21" y2="3" />
 								<path d="M21 3l-6.5 18a0.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a0.55 .55 0 0 1 0 -1l18 -6.5" />
 							</svg>
 						</div>
-						<div className={`ml-4 p-2 cursor-pointer bg-light rounded-full ${!message && 'pointer-events-none'}`}>
-							<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-circle-plus" width="30" height="30" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none" stroke-linecap="round" stroke-linejoin="round">
-								<path stroke="none" d="M0 0h24v24H0z" fill="none" />
-								<circle cx="12" cy="12" r="9" />
-								<line x1="9" y1="12" x2="15" y2="12" />
-								<line x1="12" y1="9" x2="12" y2="15" />
+						<div className='ml-4 p-2 cursor-pointer bg-light rounded-full'>
+							<input
+							type='file'
+							id='fileInput'
+							className='hidden'
+							onChange={handleFileSelect}
+							/>
+							<label htmlFor='fileInput' className='cursor-pointer'>
+							<svg
+								xmlns='http://www.w3.org/2000/svg'
+								className='icon icon-tabler icon-tabler-circle-plus'
+								width='30'
+								height='30'
+								viewBox='0 0 24 24'
+								strokeWidth='1.5'
+								stroke='#2c3e50'
+								fill='none'
+								strokeLinecap='round'
+								strokeLinejoin='round'
+							>
+								<path stroke='none' d='M0 0h24v24H0z' fill='none' />
+								<circle cx='12' cy='12' r='9' />
+								<line x1='9' y1='12' x2='15' y2='12' />
+								<line x1='12' y1='9' x2='12' y2='15' />
 							</svg>
+							</label>
 						</div>
+						{file && (
+							<div className='mt-4 flex items-center'>
+								{previewUrl ? (
+								<div className='relative'>
+									<img
+									src={previewUrl}
+									alt='Selected'
+									className='w-32 h-32 object-cover rounded'
+									/>
+									<button
+									onClick={() => {
+										setFile(null);
+										setPreviewUrl(null);
+									}}
+									className='absolute top-0 right-0 bg-gray-800 text-white rounded-full p-1'
+									>
+									&times;
+									</button>
+								</div>
+								) : (
+								<div className='flex items-center'>
+									<span className='mr-2'>{file.name}</span>
+									<button
+									onClick={() => setFile(null)}
+									className='bg-gray-800 text-white rounded-full p-1'
+									>
+									&times;
+									</button>
+								</div>
+								)}
+							</div>
+							)}
 					</div>
 				}
 			</div>
