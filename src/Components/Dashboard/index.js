@@ -2,6 +2,10 @@ import React, { useEffect, useState, useRef } from 'react'
 import userDefault from '../../Assets/userDefault.png'
 import Input from '../Input'
 import {io} from 'socket.io-client'
+import { Dropdown } from 'flowbite-react'
+import { CgProfile } from 'react-icons/cg'
+import { MdCreate, MdLogout} from 'react-icons/md'
+import { useNavigate } from 'react-router'
 
 const Dashboard = () => {
 	const [user, setUser] = useState(JSON.parse(localStorage.getItem('user:detail')))
@@ -14,6 +18,7 @@ const Dashboard = () => {
 	// zoom img
 	const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentImage, setCurrentImage] = useState('');
+	const navigate = useNavigate();
 
     const openModal = (imageUrl) => {
         setCurrentImage(imageUrl);
@@ -127,7 +132,10 @@ const Dashboard = () => {
 	};
 	
 
-
+	const handleLogout = () => {
+		localStorage.removeItem('user');
+		navigate('/users/sign_in');
+	}
 
 
 
@@ -283,6 +291,28 @@ const Dashboard = () => {
 		<div className='w-screen flex'>
 			<div className='w-[25%] h-screen bg-secondary overflow-scroll'>
 				<div className='flex items-center my-8 mx-14'>
+					{/* Dropdown Menu */}
+					<div className='mr-8'>
+						<Dropdown label="" dismissOnClick={false} renderTrigger={() => <svg class="w-8 h-8" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+						<path d="M1,4 H18 V6 H1 V4 M1,9 H18 V11 H1 V7 M3,14 H18 V16 H1 V14"/>
+						</svg>}>
+							<Dropdown.Item icon={CgProfile}>Profile</Dropdown.Item>
+							<Dropdown.Item icon={MdCreate} as="button" onClick={() => {setShowCreateGroupModal(true); setSelectedMembers([])}}>Create new group</Dropdown.Item>
+							<Dropdown.Divider />
+							<Dropdown.Item icon={MdLogout}  as="button" onClick={handleLogout}>Sign out</Dropdown.Item>
+						</Dropdown>
+					</div>
+					{/* Search Bar */}
+					<div class="flex px-4 py-0.5 rounded-full border-2 border-gray-500 overflow-hidden max-w-md mx-auto font-[sans-serif]">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192.904 192.904" width="16px"
+						class="fill-gray-600 mr-3 rotate-90">
+						<path
+							d="m190.707 180.101-47.078-47.077c11.702-14.072 18.752-32.142 18.752-51.831C162.381 36.423 125.959 0 81.191 0 36.422 0 0 36.423 0 81.193c0 44.767 36.422 81.187 81.191 81.187 19.688 0 37.759-7.049 51.831-18.751l47.079 47.078a7.474 7.474 0 0 0 5.303 2.197 7.498 7.498 0 0 0 5.303-12.803zM15 81.193C15 44.694 44.693 15 81.191 15c36.497 0 66.189 29.694 66.189 66.193 0 36.496-29.692 66.187-66.189 66.187C44.693 147.38 15 117.689 15 81.193z">
+						</path>
+						</svg>
+						<input type="search" placeholder="Search something..." class="w-full outline-none border-0 focus:ring-0 bg-transparent text-gray-600 text-sm" onChange={(e) => setSearchQuery(e.target.value)}/>
+					</div>
+					
 					<div><img src={userDefault} width={75} height={75} className='border border-primary p-[2px] rounded-full' /></div>
 					<div className='ml-8'>
 						<h3 className='text-2xl'>{user?.fullName}</h3>
@@ -291,14 +321,6 @@ const Dashboard = () => {
 
 
 					{/*  */}
-					<div className='ml-10 flex justify-between items-center'>
-						<button
-							className='bg-primary text-white px-4 py-2 rounded'
-							onClick={() => {setShowCreateGroupModal(true); setSelectedMembers([])}}
-						>
-							Create new group
-						</button>
-					</div>
 
 					{showCreateGroupModal && (
 						<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -362,7 +384,21 @@ const Dashboard = () => {
 				<div className='mx-14 mt-10'>
 					<div className='text-primary text-lg'>Messages</div>
 					<div>
-    {conversations.length > 0 ? (
+    {searchQuery?(filteredUsers.length > 0?
+		filteredUsers.map((user) => {
+			return (
+				<div className='flex items-center py-8 border-b border-b-gray-300'>
+					<div className='cursor-pointer flex items-center' onClick={() => fetchMessages('new', user)}>
+						<div><img src={userDefault} className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary" /></div>
+						<div className='ml-6'>
+							<h3 className='text-lg font-semibold'>{user?.fullName}</h3>
+							<p className='text-sm font-light text-gray-600'>{user?.email}</p>
+						</div>
+					</div>
+				</div>
+			)
+		}) : <div className='text-center text-lg font-semibold mt-24'>No Conversations</div>
+		):(conversations.length > 0 ? (
         conversations.map(({ conversationId, isGroup, user, groupName, members }) => (
             <div
                 key={conversationId}
@@ -400,12 +436,14 @@ const Dashboard = () => {
                             <p className="text-sm font-light text-gray-600">{user?.email}</p>
                         </div>
                     </div>
-                )}
+					)
+                }
             </div>
         ))
-    ) : (
-        <div className="text-center text-lg font-semibold mt-24">No Conversations</div>
-    )}
+    	) : (
+        	<div className="text-center text-lg font-semibold mt-24">No Conversations</div>
+    	))
+	}
 </div>
 
 				</div>
