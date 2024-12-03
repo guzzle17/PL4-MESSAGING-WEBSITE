@@ -348,6 +348,43 @@ app.get('/api/users/:userId', async (req, res) => {
     }
 })
 
+app.post('/api/updateProfile', async (req, res) => {
+    try {
+        const formData = req.body;
+        if (formData.oldPassword !== ""){
+            const tempUser = await Users.findOne({ email: formData.email });
+            const validatePassword = await bcryptjs.compare(formData.oldPassword, tempUser.password);
+            if (!validatePassword){
+                res.status(400).send('User email or password is incorrect');
+                return;
+            }
+            else {
+                const hashedPassword = await bcryptjs.hash(formData.newPassword, 10);
+                await Users.updateOne({ email: formData.email }, { $set: { fullName: formData.name, password: hashedPassword } })
+                .catch((err) => {
+                    res.status(500).json({
+                        success: false,
+                        message: 'Server error. Please try again.'
+                    });
+                });
+            }
+        }
+        else{
+            await Users.updateOne({ email: formData.email }, { $set: { fullName: formData.name } })
+            .catch((err) => {
+                res.status(500).json({
+                    success: false,
+                    message: 'Server error. Please try again.'
+                });
+            });
+        }
+        const user = await Users.findOne({ email: formData.email });
+        return res.status(200).json({ user: { id: user._id, email: user.email, fullName: user.fullName }})
+    } catch (error) {
+        console.log('Error', error)
+    }
+})
+
 app.listen(port, () => {
     console.log('listening on port ' + port);
 })
