@@ -169,12 +169,13 @@ app.post('/api/conversation', async (req, res) => {
         if (!isGroup || !receiverId || !senderId || !groupName) {
             return res.status(400).send('Invalid group data');
         }
-
+        console.log("check req ", req.body); 
+        console.log("recievers ", receiverId);
         const newConversation = new Conversations({
             members: [senderId, ...receiverId],
             isGroup: true,
             groupName,
-            admins: [senderId], // Người tạo nhóm là quản trị viên mặc định
+            admins: [senderId], 
         });
 
         await newConversation.save();

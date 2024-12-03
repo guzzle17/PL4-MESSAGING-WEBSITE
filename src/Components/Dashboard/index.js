@@ -85,6 +85,7 @@ const Dashboard = () => {
 
 	
 	const handleCreateGroup = async () => {
+		console.log("selected memebers: ", selectedMembers)
 		if (!selectedMembers || selectedMembers.length === 0) {
 			alert('Vui lòng chọn ít nhất một thành viên.');
 			return;
@@ -98,7 +99,7 @@ const Dashboard = () => {
 				},
 				body: JSON.stringify({
 					senderId: user?.id,
-					receiverId: selectedMembers.map((m) => m.userId),
+					receiverId: selectedMembers.map((m) => m.receiverId),
 					isGroup: true,
 					groupName: "Nhóm của tôi", // Tên nhóm mặc định
 				}),
