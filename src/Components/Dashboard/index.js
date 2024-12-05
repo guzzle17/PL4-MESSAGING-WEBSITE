@@ -7,6 +7,7 @@ import { CgProfile } from 'react-icons/cg'
 import { MdCreate, MdLogout} from 'react-icons/md'
 import { useNavigate } from 'react-router'
 import placeholder_avatar from '../../Assets/placeholder_avatar.jpg'
+import ConversationDetails from '../ConversationDetails'
 
 const Dashboard = () => {
 	const [user, setUser] = useState(JSON.parse(localStorage.getItem('user:detail')))
@@ -347,7 +348,7 @@ const Dashboard = () => {
 	return (
 		<Flowbite>
 		<div className='w-screen flex'>
-			<div className='w-[25%] h-screen bg-secondary overflow-scroll'>
+			<div className='w-[25%] h-screen bg-secondary overflow-auto'>
 				<div className='flex items-center my-8 mx-14'>
 					{/* Dropdown Menu */}
 					<div className='mr-8'>
@@ -374,11 +375,6 @@ const Dashboard = () => {
 						<input type="search" placeholder="Search something..." class="w-full outline-none border-0 focus:ring-0 bg-transparent text-gray-600 text-sm" onChange={(e) => setSearchQuery(e.target.value)}/>
 					</div>
 					
-					<div><img src={userDefault} width={75} height={75} className='border border-primary p-[2px] rounded-full' /></div>
-					<div className='ml-8'>
-						<h3 className='text-2xl'>{user?.fullName}</h3>
-						<p className='text-lg font-light'>My Account</p>
-					</div>
 
 
 					{/*  */}
@@ -605,7 +601,7 @@ const Dashboard = () => {
 						</div>
 					</div>
 				}
-				<div className='h-[75%] w-full overflow-scroll shadow-sm'>
+				<div className='h-[75%] w-full overflow-auto shadow-sm'>
 					<div className='p-14'>
 						{
 							messages?.messages?.length > 0 ? (
@@ -722,27 +718,32 @@ const Dashboard = () => {
 					</div>
 				}
 			</div>
-			<div className='w-[25%] h-screen bg-light px-8 py-16 overflow-scroll'>
+				{messages?.receiver?.fullName? (
+					<ConversationDetails user={messages?.receiver} />
+				) : (
+				<div className='w-[25%] h-screen bg-light px-8 py-16 overflow-auto'>
 				<div className='text-primary text-lg'>People</div>
-				<div>
-					{
-						users.length > 0 ?
-							users.map(({ userId, user }) => {
-								return (
-									<div className='flex items-center py-8 border-b border-b-gray-300'>
-										<div className='cursor-pointer flex items-center' onClick={() => fetchMessages('new', user)}>
-											<div><img src={userDefault} className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary" /></div>
-											<div className='ml-6'>
-												<h3 className='text-lg font-semibold'>{user?.fullName}</h3>
-												<p className='text-sm font-light text-gray-600'>{user?.email}</p>
+					<div>
+						{
+							users.length > 0 ?
+								users.map(({ userId, user }) => {
+									return (
+										<div className='flex items-center py-8 border-b border-b-gray-300'>
+											<div className='cursor-pointer flex items-center' onClick={() => fetchMessages('new', user)}>
+												<div><img src={userDefault} className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary" /></div>
+												<div className='ml-6'>
+													<h3 className='text-lg font-semibold'>{user?.fullName}</h3>
+													<p className='text-sm font-light text-gray-600'>{user?.email}</p>
+												</div>
 											</div>
 										</div>
-									</div>
-								)
-							}) : <div className='text-center text-lg font-semibold mt-24'>No Conversations</div>
-					}
+									)
+								}) : <div className='text-center text-lg font-semibold mt-24'>No Conversations</div>
+						}
 				</div>
-			</div>
+				</div>)
+				}
+				
 		</div>
 		</Flowbite>
 	)

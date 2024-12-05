@@ -21,6 +21,11 @@ function App() {
     <Routes>
       <Route path='/' element={
         <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      }/>
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
           <div className="App">
             <div className="Contacts">
               <DropDownMenu />
@@ -30,11 +35,6 @@ function App() {
               <MessageView />
             </div>
           </div>
-        </ProtectedRoute>
-      }/>
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <Dashboard />
         </ProtectedRoute>
       } />
       <Route path="/users/sign_in" element={<Form isSignInPage={true}/>} />
