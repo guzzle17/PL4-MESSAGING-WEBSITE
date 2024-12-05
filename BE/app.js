@@ -63,8 +63,8 @@ io.on('connection', socket => {
         }
     });
 
-    socket.on('sendMessage', async ({ senderId, receiverId, message, conversationId, type, file_url }) => {
-        const receiver = users.find(user => user.userId === receiverId);
+    socket.on('sendMessage', async ({ senderId, members, message, conversationId, type, file_url }) => {
+        const receivers = users.filter(user => members.includes(user.userId));
         const sender = users.find(user => user.userId === senderId);
         const user = await Users.findById(senderId);
       
@@ -72,17 +72,22 @@ io.on('connection', socket => {
           senderId,
           message,
           conversationId,
-          receiverId,
+          members,
           user: { id: user._id, fullName: user.fullName, email: user.email },
           type,
           file_url,
         };
-      
-        if (receiver) {
-          io.to(receiver.socketId).to(sender.socketId).emit('getMessage', messageData);
-        } else {
-          io.to(sender.socketId).emit('getMessage', messageData);
-        }
+        if (receivers && receivers.length > 0) {
+            receivers.forEach(receiver => {
+              if (receiver.userId !== sender.userId) {
+                io.to(receiver.socketId).emit('getMessage', messageData);
+              }
+            });
+            io.to(sender.socketId).emit('getMessage', messageData);
+          } else {
+            io.to(sender.socketId).emit('getMessage', messageData);
+          }
+          
       });
     socket.on('disconnect', () => {
         console.log("active users left ", users);
@@ -215,8 +220,9 @@ app.get('/api/conversations/:userId', async (req, res) => {
                     );
                     return {
                         isGroup: true,
-                        groupName: conversation.groupName,
+                        nameConversation: conversation.groupName,
                         conversationId: conversation._id,
+                        discription: members.length + " thành viên",
                         members,
                     };
                 } else {
@@ -225,11 +231,14 @@ app.get('/api/conversations/:userId', async (req, res) => {
                     const user = await Users.findById(receiverId, 'fullName email');
                     return {
                         isGroup: false,
-                        user: {
-                            receiverId: user._id,
-                            email: user.email,
-                            fullName: user.fullName,
-                        },
+                        // user: {
+                        //     receiverId: user._id,
+                        //     email: user.email,
+                        //     fullName: user.fullName,
+                        // },
+                        nameConversation: user.fullName,
+                        discription: user.email,
+                        members: [user],
                         conversationId: conversation._id,
                     };
                 }
@@ -279,9 +288,7 @@ app.post('/api/message', upload.single('file'), async (req, res) => {
         });
         await newMessage.save();
         return res.status(200).json({ message: newMessage });
-      } else if (!conversationId && !receiverId) {
-        return res.status(400).send('Please fill all required fields');
-      }
+      } 
       const newMessage = new Messages({
         conversationId,
         senderId,
@@ -300,7 +307,7 @@ app.post('/api/message', upload.single('file'), async (req, res) => {
   app.get('/api/message/:conversationId', async (req, res) => {
     try {
         const { conversationId } = req.params;
-
+        console.log(req.params);
         const checkMessages = async (conversationId) => {
             const messages = await Messages.find({ conversationId }).lean();
             const messageUserData = await Promise.all(
@@ -311,9 +318,10 @@ app.post('/api/message', upload.single('file'), async (req, res) => {
                         message: message.message,
                         type: message.type,
                         file_url: message.file_url,
-                    };
+                    };  
                 })
             );
+            console.log("messageUserData: ", messageUserData);
             res.status(200).json(messageUserData);
         };
 
@@ -348,6 +356,52 @@ app.get('/api/users/:userId', async (req, res) => {
         console.log('Error', error)
     }
 })
+
+
+
+app.post('/api/conversation/editinformation', upload.single('file'), async (req, res) => {
+    try {
+        
+    } catch (error) {
+      console.log(error, 'Error');
+      res.status(500).send('Internal Server Error');
+    }
+  });
+
+app.post('/api/conversation/editinformation', upload.single('file'), async (req, res) => {
+    try {
+        const { conversationId, groupName } = req.body;
+        let avatarUrl = null;
+
+        // Nếu có tệp được tải lên
+        if (req.file) {
+            // Giả sử bạn muốn lưu đường dẫn tệp (hoặc URL nếu dùng Cloudinary, S3,...)
+            avatarUrl = `/uploads/${req.file.filename}`;  // Lưu đường dẫn tới tệp
+        }
+
+        // Tìm và cập nhật cuộc trò chuyện theo ID
+        const updatedConversation = await Conversation.findByIdAndUpdate(
+            conversationId,
+            {
+                groupName: groupName || undefined,  // Cập nhật tên nhóm nếu có
+                avatar: avatarUrl || undefined       // Cập nhật ảnh nhóm nếu có tệp tải lên
+            },
+            { new: true }  // Trả về tài liệu mới sau khi cập nhật
+        );
+
+        // Kiểm tra nếu không tìm thấy nhóm
+        if (!updatedConversation) {
+            return res.status(404).json({ message: 'Conversation not found' });
+        }
+
+        return res.status(200).json(updatedConversation);
+    } catch (error) {
+        console.log(error, 'Error');
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
 
 app.listen(port, () => {
     console.log('listening on port ' + port);
