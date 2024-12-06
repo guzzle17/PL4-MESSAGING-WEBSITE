@@ -741,8 +741,8 @@ const Dashboard = () => {
 					</div>
 				}
 			</div>
-				{messages?.receiver?.fullName? (
-					<ConversationDetails user={messages?.receiver} />
+				{messages?.members? (
+					<ConversationDetails members={messages.members} nameConversation={messages.nameConversation} description={messages.discription} isGroup={messages.isGroup} />
 				) : (
 				<div className='w-[25%] h-screen bg-light px-8 py-16 overflow-auto'>
 				<div className='text-primary text-lg'>People</div>
