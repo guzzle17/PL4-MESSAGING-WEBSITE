@@ -38,7 +38,7 @@ const Dashboard = () => {
 	const [previewUrl, setPreviewUrl] = useState(null);
 
 
-	/* add group*/
+	/* add group*/	
 	const [filteredUsers, setFilteredUsers] = useState([]); // Dữ liệu đã lọc
 	const [searchQuery, setSearchQuery] = useState(''); // Giá trị tìm kiếm
 	const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
@@ -93,6 +93,7 @@ const Dashboard = () => {
 
 	
 	const handleCreateGroup = async () => {
+		console.log("selected memebers: ", selectedMembers)
 		if (!selectedMembers || selectedMembers.length === 0) {
 			alert('Vui lòng chọn ít nhất một thành viên.');
 			return;
@@ -106,7 +107,7 @@ const Dashboard = () => {
 				},
 				body: JSON.stringify({
 					senderId: user?.id,
-					receiverId: selectedMembers.map((m) => m.userId),
+					receiverId: selectedMembers.map((m) => m.receiverId),
 					isGroup: true,
 					groupName: "Nhóm của tôi", // Tên nhóm mặc định
 				}),
@@ -286,8 +287,8 @@ const Dashboard = () => {
 		fetchUsers()
 	}, [])
 
-	const fetchMessages = async (conversationId, receiver) => {
-		const res = await fetch(`http://localhost:8000/api/message/${conversationId}?senderId=${user?.id}&&receiverId=${receiver?.receiverId}`, {
+	const fetchMessages = async (conversationId, members, nameConversation, discription, isGroup) => {
+		const res = await fetch(`http://localhost:8000/api/message/${conversationId}?senderId=${user?.id}`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -295,7 +296,8 @@ const Dashboard = () => {
 		});
 		const resData = await res.json()
 		//resData: { user: { id: user._id, email: user.email, fullName: user.fullName }, message: message.message, type: message.type, file_url: message.file_url }
-		setMessages({ messages: resData, receiver, conversationId }) 
+		setMessages({ messages: resData, members, conversationId, nameConversation, discription, isGroup }) 
+		console.log("messages: ", messages);
 	}
 
 	const sendMessage = async () => {
@@ -307,7 +309,6 @@ const Dashboard = () => {
 		const formData = new FormData();
 		formData.append('conversationId', messages?.conversationId);
 		formData.append('senderId', user?.id);
-		formData.append('receiverId', messages?.receiver?.receiverId);
 	
 		if (message) {
 			formData.append('message', message);
@@ -329,7 +330,7 @@ const Dashboard = () => {
 			// Gửi tin nhắn qua socket
 			socket?.emit('sendMessage', {
 				senderId: user?.id,
-				receiverId: messages?.receiver?.receiverId,
+				members : messages?.members.map(member => member._id),
 				message: data.message.message,
 				conversationId: messages?.conversationId,
 				type: data.message.type,
@@ -533,7 +534,7 @@ const Dashboard = () => {
 			)
 		}) : <div className='text-center text-lg font-semibold mt-24'>No Conversations</div>
 		):(conversations.length > 0 ? (
-        conversations.map(({ conversationId, isGroup, user, groupName, members }) => (
+        conversations.map(({ conversationId, isGroup, nameConversation, discription, members }) => (
             <div
                 key={conversationId}
                 className="flex items-center py-8 border-b border-b-gray-300"
@@ -542,15 +543,15 @@ const Dashboard = () => {
                     // Hiển thị nhóm
                     <div
                         className="cursor-pointer flex items-center"
-                        onClick={() => fetchMessages(conversationId, { groupName, members })}
+                        onClick={() => fetchMessages(conversationId, members, nameConversation, discription, isGroup)}
                     >
                         <div className="w-[60px] h-[60px] bg-primary rounded-full flex items-center justify-center text-white font-bold">
-                            {groupName.charAt(0)}
+                            {nameConversation.charAt(0)}
                         </div>
                         <div className="ml-6">
-                            <h3 className="text-lg font-semibold">{groupName}</h3>
+                            <h3 className="text-lg font-semibold">{nameConversation}</h3>
                             <p className="text-sm font-light text-gray-600">
-                                {members.length} thành viên
+                                {discription}
                             </p>
                         </div>
                     </div>
@@ -558,7 +559,7 @@ const Dashboard = () => {
                     // Hiển thị hội thoại cá nhân
                     <div
                         className="cursor-pointer flex items-center"
-                        onClick={() => fetchMessages(conversationId, user)}
+                        onClick={() => fetchMessages(conversationId, members, nameConversation, discription, isGroup)}
                     >
                         <img
                             src={userDefault}
@@ -566,8 +567,8 @@ const Dashboard = () => {
                             alt="User Avatar"
                         />
                         <div className="ml-6">
-                            <h3 className="text-lg font-semibold">{user?.fullName}</h3>
-                            <p className="text-sm font-light text-gray-600">{user?.email}</p>
+                            <h3 className="text-lg font-semibold">{nameConversation}</h3>
+                            <p className="text-sm font-light text-gray-600">{discription}</p>
                         </div>
                     </div>
 					)
@@ -584,12 +585,34 @@ const Dashboard = () => {
 			</div>
 			<div className='w-[50%] h-screen bg-white flex flex-col items-center'>
 				{
-					messages?.receiver?.fullName &&
+					messages?.nameConversation &&
 					<div className='w-[75%] bg-secondary h-[80px] my-14 rounded-full flex items-center px-14 py-2'>
-						<div className='cursor-pointer'><img src={userDefault} width={60} height={60} className="rounded-full" /></div>
+						<div className="cursor-pointer">
+							{messages.isGroup ? (
+								<div>
+									<div className="w-[60px] h-[60px] bg-primary rounded-full flex items-center justify-center text-white font-bold">
+										{messages.nameConversation?.charAt(0)}
+									</div>
+									{/* <div className="text-center mt-2">
+										<p>{messages.nameConversation || "Nhóm của tôi"}</p>
+										<p>{messages.members?.length || 0} thành viên</p>
+									</div> */}
+								</div>
+							) : (
+								<img
+									src={userDefault}
+									width={60}
+									height={60}
+									className="rounded-full"
+									alt="User avatar"
+								/>
+							)}
+						</div>
+
+
 						<div className='ml-6 mr-auto'>
-							<h3 className='text-lg'>{messages?.receiver?.fullName}</h3>
-							<p className='text-sm font-light text-gray-600'>{messages?.receiver?.email}</p>
+							<h3 className='text-lg'>{messages?.nameConversation}</h3>
+							<p className='text-sm font-light text-gray-600'>{messages?.discription}</p>
 						</div>
 						<div className='cursor-pointer'>
 							<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-phone-outgoing" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="black" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -646,7 +669,7 @@ const Dashboard = () => {
 				</div>
 
 				{
-					messages?.receiver?.fullName &&
+					messages?.nameConversation &&
 					<div className='p-14 w-full flex items-center'>
 						<Input placeholder='Type a message...' value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => {         if (e.key === 'Enter') {           sendMessage();       }       }} className='w-[100%]' inputClassName='p-4 border-0 shadow-md rounded-full bg-light focus:ring-0 focus:border-0 outline-none w-[99%]' />
 						<div className={`ml-4 p-2 cursor-pointer bg-light rounded-full ${(!message && !file) && 'pointer-events-none'}`} onClick={() => sendMessage()}>
