@@ -147,9 +147,9 @@ const handleAddMember = async (memberId) => {
 
 const handleRemoveMember = async (memberId) => {
     if (!currentConversation) return;
-
+	
     if (!window.confirm('Are you sure you want to remove this member?')) return;
-
+	console.log("remove: ", memberId);
     try {
         const response = await fetch(`http://localhost:8000/api/conversation/${currentConversation.conversationId}/removeMembers`, {
             method: 'POST',
@@ -213,6 +213,78 @@ const handleDeleteGroup = async () => {
         alert('An error occurred while deleting the group.');
     }
 };
+
+useEffect(() => {
+    if (!socket) return;
+
+    socket.on('memberAdded', data => {
+        if (currentConversation && data.conversationId === currentConversation.conversationId) {
+            setConversations(conversations.map(conv => 
+                conv.conversationId === data.conversationId 
+                    ? { ...conv, members: [...conv.members, ...data.newMembers] } 
+                    : conv
+            ));
+        }
+    });
+
+    socket.on('memberRemoved', data => {
+        if (currentConversation && data.conversationId === currentConversation.conversationId) {
+            setConversations(conversations.map(conv => 
+                conv.conversationId === data.conversationId 
+                    ? { ...conv, members: conv.members.filter(m => !data.removedMembers.includes(m._id)) } 
+                    : conv
+            ));
+        }
+    });
+
+    socket.on('groupInfoUpdated', data => {
+        if (currentConversation && data.conversationId === currentConversation.conversationId) {
+            setConversations(conversations.map(conv => 
+                conv.conversationId === data.conversationId 
+                    ? { ...conv, groupName: data.groupName, avatar: data.avatarUrl } 
+                    : conv
+            ));
+            setMessages(prev => ({ ...prev, nameConversation: data.groupName, avatar: data.avatarUrl }));
+        }
+    });
+
+    socket.on('groupDeleted', data => {
+        if (currentConversation && data.conversationId === currentConversation.conversationId) {
+            setConversations(conversations.filter(conv => conv.conversationId !== data.conversationId));
+            setMessages([]);
+            setCurrentConversation(null);
+        }
+    });
+
+    return () => {
+        socket.off('memberAdded');
+        socket.off('memberRemoved');
+        socket.off('groupInfoUpdated');
+        socket.off('groupDeleted');
+    };
+}, [socket, currentConversation, conversations]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	//----------------

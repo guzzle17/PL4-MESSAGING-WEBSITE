@@ -390,6 +390,9 @@ app.post('/api/conversation/editinformation', upload.single('file'), async (req,
             return res.status(404).json({ message: 'Conversation not found' });
         }
 
+         // After editing group info
+         io.to(conversationId).emit('groupInfoUpdated', { conversationId, groupName, avatarUrl });
+
         return res.status(200).json(updatedConversation);
     } catch (error) {
         console.log(error, 'Error');
@@ -492,6 +495,9 @@ app.delete('/api/conversation/:conversationId', async (req, res) => {
         await Conversations.findByIdAndDelete(conversationId);
 
         res.status(200).json({ message: 'Group deleted successfully' });
+      
+        io.emit('groupDeleted', { conversationId });
+
     } catch (error) {
         console.log(error, 'Error');
         res.status(500).send('Internal Server Error');
@@ -521,6 +527,12 @@ app.post('/api/conversation/:conversationId/addMembers', async (req, res) => {
         const conversationsss = await Conversations.findById(conversationId);
         console.log("check add: ", conversationsss);
         res.status(200).json({ message: 'Members added successfully', members: conversation.members });
+        // After adding a member
+        io.to(conversationId).emit('memberAdded', { conversationId, newMembers: membersToAdd });
+
+       
+
+
     } catch (error) {
         console.log(error, 'Error');
         res.status(500).send('Internal Server Error');
@@ -554,6 +566,9 @@ app.post('/api/conversation/:conversationId/removeMembers', async (req, res) => 
         await conversation.save();
 
         res.status(200).json({ message: 'Members removed successfully', members: conversation.members });
+         // After removing a member
+         io.to(conversationId).emit('memberRemoved', { conversationId, removedMembers: membersToRemove });
+
     } catch (error) {
         console.log(error, 'Error');
         res.status(500).send('Internal Server Error');
