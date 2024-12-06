@@ -10,6 +10,212 @@ const Dashboard = () => {
 	const [message, setMessage] = useState('')
 	const [users, setUsers] = useState([])
 	const [socket, setSocket] = useState(null)
+
+
+	//6/12/2024
+	
+	const [currentConversation, setCurrentConversation] = useState(null);
+	const [isAdmin, setIsAdmin] = useState(false); 
+
+	const [showEditGroupModal, setShowEditGroupModal] = useState(false);
+	const [editGroupName, setEditGroupName] = useState(messages?.nameConversation || '');
+	const [editGroupAvatar, setEditGroupAvatar] = useState(null);
+
+	const handleEditGroup = async () => {
+		if (!currentConversation) return;
+
+		const formData = new FormData();
+		formData.append('senderId', user.id);
+		if (editGroupName) formData.append('groupName', editGroupName);
+		if (editGroupAvatar) formData.append('avatar', editGroupAvatar);
+
+		try {
+			const response = await fetch(`http://localhost:8000/api/conversation/${currentConversation.conversationId}`, {
+				method: 'PUT',
+				body: formData,
+			});
+
+			if (response.ok) {
+				const updatedConversation = await response.json();
+				// Update conversations state
+				setConversations(conversations.map(conv => 
+					conv.conversationId === updatedConversation._id ? updatedConversation : conv
+				));
+				alert('Group information updated successfully!');
+				setShowEditGroupModal(false);
+			} else {
+				const error = await response.json();
+				console.error('Failed to edit group:', error.message);
+				alert('Failed to update group information.');
+			}
+		} catch (err) {
+			console.error('Error editing group:', err);
+			alert('An error occurred while updating group information.');
+		}
+	};
+
+
+
+const handleLeaveGroup = async () => {
+    if (!currentConversation) return;
+
+    if (!window.confirm('Are you sure you want to leave this group?')) return;
+
+    try {
+        const response = await fetch(`http://localhost:8000/api/conversation/${currentConversation.conversationId}/leave`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userId: user.id }),
+        });
+
+        if (response.ok) {
+            alert('You have left the group.');
+            // Remove the conversation from the state
+            setConversations(conversations.filter(conv => conv.conversationId !== currentConversation.conversationId));
+            setMessages([]);
+            setCurrentConversation(null);
+        } else {
+            const error = await response.json();
+            console.error('Failed to leave group:', error.message);
+            alert('Failed to leave the group.');
+        }
+    } catch (err) {
+        console.error('Error leaving group:', err);
+        alert('An error occurred while leaving the group.');
+    }
+};
+
+	// States for modals and search
+const [showAddMembersModal, setShowAddMembersModal] = useState(false);
+const [showRemoveMembersModal, setShowRemoveMembersModal] = useState(false);
+const [addMemberQuery, setAddMemberQuery] = useState('');
+const [filteredAddMembers, setFilteredAddMembers] = useState([]);
+
+// Fetch users to add (excluding current members)
+useEffect(() => {
+    if (addMemberQuery) {
+        const filtered = users.filter(u =>
+            u.user.fullName.toLowerCase().includes(addMemberQuery.toLowerCase()) &&
+            !messages?.members?.some(member => member._id === u.user.userId)
+        );
+        setFilteredAddMembers(filtered.map(u => u.user));
+    } else {
+        setFilteredAddMembers(users
+            .filter(u => !messages?.members?.some(member => member._id === u.user.userId))
+            .map(u => u.user)
+        );
+    }
+}, [addMemberQuery, users, messages.members]);
+
+const handleAddMember = async (memberId) => {
+    if (!currentConversation) return;
+	console.log("memberID: ", memberId);
+    try {
+        const response = await fetch(`http://localhost:8000/api/conversation/${currentConversation.conversationId}/addMembers`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                senderId: user.id,
+                membersToAdd: [memberId],
+            }),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            alert('Member added successfully!', + data);
+            // Update conversations state
+            setConversations(conversations.map(conv => 
+                conv.conversationId === currentConversation?.conversationId 
+                    ? { ...conv, members: data.members } 
+                    : conv
+            ));
+            setShowAddMembersModal(false);
+        } else {
+            const error = await response.json();
+            console.error('Failed to add member:', error.message);
+            alert('Failed to add member.');
+        }
+    } catch (err) {
+        console.error('Error adding member:', err);
+        alert('An error occurred while adding the member.');
+    }
+};
+
+const handleRemoveMember = async (memberId) => {
+    if (!currentConversation) return;
+
+    if (!window.confirm('Are you sure you want to remove this member?')) return;
+
+    try {
+        const response = await fetch(`http://localhost:8000/api/conversation/${currentConversation.conversationId}/removeMembers`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                senderId: user.id,
+                membersToRemove: [memberId],
+            }),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            alert('Member removed successfully!');
+            // Update conversations state
+            setConversations(conversations.map(conv => 
+                conv.conversationId === currentConversation.conversationId 
+                    ? { ...conv, members: data.members } 
+                    : conv
+            ));
+            setShowRemoveMembersModal(false);
+        } else {
+            const error = await response.json();
+            console.error('Failed to remove member:', error.message);
+            alert('Failed to remove member.');
+        }
+    } catch (err) {
+        console.error('Error removing member:', err);
+        alert('An error occurred while removing the member.');
+    }
+};
+
+const handleDeleteGroup = async () => {
+    if (!currentConversation) return;
+
+    if (!window.confirm('Are you sure you want to delete this group? This action cannot be undone.')) return;
+
+    try {
+        const response = await fetch(`http://localhost:8000/api/conversation/${currentConversation.conversationId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ senderId: user.id }),
+        });
+
+        if (response.ok) {
+            alert('Group deleted successfully!');
+            // Remove the conversation from the state
+            setConversations(conversations.filter(conv => conv.conversationId !== currentConversation.conversationId));
+            setMessages([]);
+            setCurrentConversation(null);
+        } else {
+            const error = await response.json();
+            console.error('Failed to delete group:', error.message);
+            alert('Failed to delete the group.');
+        }
+    } catch (err) {
+        console.error('Error deleting group:', err);
+        alert('An error occurred while deleting the group.');
+    }
+};
+
+
+	//----------------
 	const messageRef = useRef(null)
 	// zoom img
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -221,6 +427,18 @@ const Dashboard = () => {
 		fetchUsers()
 	}, [])
 
+	// const fetchMessages = async (conversationId, members, nameConversation, discription, isGroup) => {
+	// 	const res = await fetch(`http://localhost:8000/api/message/${conversationId}?senderId=${user?.id}`, {
+	// 		method: 'GET',
+	// 		headers: {
+	// 			'Content-Type': 'application/json',
+	// 		}
+	// 	});
+	// 	const resData = await res.json()
+	// 	//resData: { user: { id: user._id, email: user.email, fullName: user.fullName }, message: message.message, type: message.type, file_url: message.file_url }
+	// 	setMessages({ messages: resData, members, conversationId, nameConversation, discription, isGroup }) 
+	// 	console.log("messages: ", messages);
+	// }
 	const fetchMessages = async (conversationId, members, nameConversation, discription, isGroup) => {
 		const res = await fetch(`http://localhost:8000/api/message/${conversationId}?senderId=${user?.id}`, {
 			method: 'GET',
@@ -228,11 +446,20 @@ const Dashboard = () => {
 				'Content-Type': 'application/json',
 			}
 		});
-		const resData = await res.json()
-		//resData: { user: { id: user._id, email: user.email, fullName: user.fullName }, message: message.message, type: message.type, file_url: message.file_url }
-		setMessages({ messages: resData, members, conversationId, nameConversation, discription, isGroup }) 
-		console.log("messages: ", messages);
-	}
+		const resData = await res.json();
+		setMessages({ messages: resData, members, conversationId, nameConversation, discription, isGroup });
+	
+		// Check if the user is an admin
+		const conversation = conversations.find(conv => conv.conversationId === conversationId);
+		if (conversation && conversation.admins.includes(user.id)) {
+			setIsAdmin(true);
+		} else {
+			setIsAdmin(false);
+		}
+	
+		setCurrentConversation(conversation);
+	};
+	
 
 	const sendMessage = async () => {
 		if (!message && !file) {
@@ -363,51 +590,62 @@ const Dashboard = () => {
 				<div className='mx-14 mt-10'>
 					<div className='text-primary text-lg'>Messages</div>
 					<div>
-    {conversations.length > 0 ? (
-        conversations.map(({ conversationId, isGroup, nameConversation, discription, members }) => (
-            <div
-                key={conversationId}
-                className="flex items-center py-8 border-b border-b-gray-300"
-            >
-                {isGroup ? (
-                    // Hiển thị nhóm
-                    <div
-                        className="cursor-pointer flex items-center"
-                        onClick={() => fetchMessages(conversationId, members, nameConversation, discription, isGroup)}
-                    >
-                        <div className="w-[60px] h-[60px] bg-primary rounded-full flex items-center justify-center text-white font-bold">
-                            {nameConversation.charAt(0)}
-                        </div>
-                        <div className="ml-6">
-                            <h3 className="text-lg font-semibold">{nameConversation}</h3>
-                            <p className="text-sm font-light text-gray-600">
-                                {discription}
-                            </p>
-                        </div>
-                    </div>
-                ) : (
-                    // Hiển thị hội thoại cá nhân
-                    <div
-                        className="cursor-pointer flex items-center"
-                        onClick={() => fetchMessages(conversationId, members, nameConversation, discription, isGroup)}
-                    >
-                        <img
-                            src={userDefault}
-                            className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
-                            alt="User Avatar"
-                        />
-                        <div className="ml-6">
-                            <h3 className="text-lg font-semibold">{nameConversation}</h3>
-                            <p className="text-sm font-light text-gray-600">{discription}</p>
-                        </div>
-                    </div>
-                )}
-            </div>
-        ))
-    ) : (
-        <div className="text-center text-lg font-semibold mt-24">No Conversations</div>
-    )}
-</div>
+						{conversations.length > 0 ? (
+							conversations.map(({ conversationId, isGroup, nameConversation, discription, members, avatar }) => (
+								
+								<div
+									key={conversationId}
+									className="flex items-center py-8 border-b border-b-gray-300"
+								>
+									{/* <div>{nameConversation + (avatar )  }</div> */}
+									{isGroup ? (
+										// Hiển thị nhóm
+										<div
+											className="cursor-pointer flex items-center"
+											onClick={() => fetchMessages(conversationId, members, nameConversation, discription, isGroup)}
+										>
+											{!!(avatar)? <img
+												src={`http://localhost:8000${avatar}`}
+												className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
+												alt="User Avatar"
+											/>
+											:<div className="w-[60px] h-[60px] bg-primary rounded-full flex items-center justify-center text-white font-bold">
+												G
+											</div>}
+											<div className="ml-6">
+												<h3 className="text-lg font-semibold">{nameConversation}</h3>
+												<p className="text-sm font-light text-gray-600">
+													{discription}
+												</p>
+											</div>
+										</div>
+									) : (
+										// Hiển thị hội thoại cá nhân
+										<div
+											className="cursor-pointer flex items-center"
+											onClick={() => fetchMessages(conversationId, members, nameConversation, discription, isGroup)}
+										>
+											<img
+												src={avatar ? <img
+													src={avatar ? (`http://localhost:8000${avatar}`): userDefault}
+													className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
+													alt="User Avatar"
+													/>: userDefault}
+												className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
+												alt="User Avatar"
+												/>
+											<div className="ml-6">
+												<h3 className="text-lg font-semibold">{nameConversation}</h3>
+												<p className="text-sm font-light text-gray-600">{discription}</p>
+											</div>
+										</div>
+									)}
+								</div>
+							))
+						) : (
+							<div className="text-center text-lg font-semibold mt-24">No Conversations</div>
+						)}
+					</div>
 
 				</div>
 			</div>
@@ -586,9 +824,141 @@ const Dashboard = () => {
 										</div>
 									</div>
 								)
-							}) : <div className='text-center text-lg font-semibold mt-24'>No Conversations</div>
+							}) : <div className='text-center text-lg font-semibold mt-24'>No Users</div>
 					}
 				</div>
+				<div>
+					{messages?.isGroup && isAdmin && (
+						<button onClick={() => setShowEditGroupModal(true)} className="ml-4 p-2 bg-secondary rounded">
+							Edit Group
+						</button>
+					)}
+
+				</div>
+				<div>
+					{showEditGroupModal && (
+						<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+							<div className="bg-white w-[500px] p-6 rounded shadow-lg">
+								<h2 className="text-xl font-bold mb-4">Edit Group Information</h2>
+								<input
+									type="text"
+									placeholder="Group Name"
+									className="w-full border p-2 rounded mb-4"
+									value={editGroupName}
+									onChange={(e) => setEditGroupName(e.target.value)}
+								/>
+								<input
+									type="file"
+									className="w-full mb-4"
+									onChange={(e) => setEditGroupAvatar(e.target.files[0])}
+								/>
+								<div className="mt-4 flex justify-end">
+									<button
+										className="bg-gray-300 text-black px-4 py-2 rounded mr-2"
+										onClick={() => setShowEditGroupModal(false)}
+									>
+										Cancel
+									</button>
+									<button
+										className="bg-primary text-white px-4 py-2 rounded"
+										onClick={handleEditGroup}
+									>
+										Save Changes
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
+
+				</div>
+					{messages?.isGroup && (
+						<button onClick={handleLeaveGroup} className="ml-4 p-2 bg-red-500 text-white rounded">
+							Leave Group
+						</button>
+					)}
+					{messages?.isGroup && isAdmin && (
+						<div className="ml-4 flex space-x-2">
+							<button onClick={() => setShowAddMembersModal(true)} className="p-2 bg-green-500 text-white rounded">
+								Add Members
+							</button>
+							<button onClick={() => setShowRemoveMembersModal(true)} className="p-2 bg-yellow-500 text-white rounded">
+								Remove Members
+							</button>
+							<button onClick={handleDeleteGroup} className="p-2 bg-red-600 text-white rounded">
+								Delete Group
+							</button>
+						</div>
+					)}
+					{showAddMembersModal && (
+						<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+							<div className="bg-white w-[500px] p-6 rounded shadow-lg">
+								<h2 className="text-xl font-bold mb-4">Add Members</h2>
+								<input
+									type="text"
+									placeholder="Search users to add"
+									className="w-full border p-2 rounded mb-4"
+									value={addMemberQuery}
+									onChange={(e) => setAddMemberQuery(e.target.value)}
+								/>
+								<div className="max-h-[300px] overflow-y-auto mb-4">
+									{filteredAddMembers.map(member => (
+										<div key={member.userId} className="flex items-center justify-between p-2 border-b">
+											<div className="flex items-center">
+												<img src={userDefault} className="w-10 h-10 rounded-full mr-2" alt="User" />
+												<div>
+													<span className="font-semibold">{member.fullName}</span>
+													<span className="text-sm text-gray-600">{member.email}</span>
+												</div>
+											</div>
+											<button onClick={() => handleAddMember(member.receiverId)} className="bg-primary text-white px-2 py-1 rounded">
+												Add
+											</button>
+										</div>
+									))}
+								</div>
+								<div className="flex justify-end">
+									<button onClick={() => setShowAddMembersModal(false)} className="bg-gray-300 text-black px-4 py-2 rounded mr-2">
+										Cancel
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{showRemoveMembersModal && (
+						<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+							<div className="bg-white w-[500px] p-6 rounded shadow-lg">
+								<h2 className="text-xl font-bold mb-4">Remove Members</h2>
+								<div className="max-h-[300px] overflow-y-auto mb-4">
+									{messages.members.map(member => (
+										member._id !== user.id && ( // Prevent removing self
+											<div key={member._id} className="flex items-center justify-between p-2 border-b">
+												<div className="flex items-center">
+													<img src={userDefault} className="w-10 h-10 rounded-full mr-2" alt="User" />
+													<div>
+														<span className="font-semibold">{member.fullName}</span>
+														<span className="text-sm text-gray-600">{member.email}</span>
+													</div>
+												</div>
+												<button onClick={() => handleRemoveMember(member._id)} className="bg-red-500 text-white px-2 py-1 rounded">
+													Remove
+												</button>
+											</div>
+										)
+									))}
+								</div>
+								<div className="flex justify-end">
+									<button onClick={() => setShowRemoveMembersModal(false)} className="bg-gray-300 text-black px-4 py-2 rounded mr-2">
+										Cancel
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
+
+
+
+
 			</div>
 		</div>
 	)

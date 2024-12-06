@@ -223,6 +223,8 @@ app.get('/api/conversations/:userId', async (req, res) => {
                         nameConversation: conversation.groupName,
                         conversationId: conversation._id,
                         discription: members.length + " thành viên",
+                        admins: conversation.admins,
+                        avatar: conversation.avatar,
                         members,
                     };
                 } else {
@@ -239,6 +241,8 @@ app.get('/api/conversations/:userId', async (req, res) => {
                         nameConversation: user.fullName,
                         discription: user.email,
                         members: [user],
+                        admins: [],
+                        avatar: user.profile_picture,
                         conversationId: conversation._id,
                     };
                 }
@@ -359,14 +363,6 @@ app.get('/api/users/:userId', async (req, res) => {
 
 
 
-app.post('/api/conversation/editinformation', upload.single('file'), async (req, res) => {
-    try {
-        
-    } catch (error) {
-      console.log(error, 'Error');
-      res.status(500).send('Internal Server Error');
-    }
-  });
 
 app.post('/api/conversation/editinformation', upload.single('file'), async (req, res) => {
     try {
@@ -401,6 +397,168 @@ app.post('/api/conversation/editinformation', upload.single('file'), async (req,
     }
 });
 
+
+// Update group information (name and avatar)
+app.put('/api/conversation/:conversationId', upload.single('avatar'), async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const { senderId, groupName } = req.body;
+        let avatarUrl = null;
+
+        if (req.file) {
+            avatarUrl = `/uploads/${req.file.filename}`;
+        }
+
+        // Find the conversation
+        const conversation = await Conversations.findById(conversationId);
+        if (!conversation) {
+            return res.status(404).json({ message: 'Conversation not found' });
+        }
+
+        // Check if sender is admin
+        if (!conversation.admins.includes(senderId)) {
+            return res.status(403).json({ message: 'Only admins can edit group information' });
+        }
+
+        // Update fields if provided
+        if (groupName) {
+            conversation.groupName = groupName;
+        }
+        if (avatarUrl) {
+            conversation.avatar = avatarUrl;
+        }
+
+        await conversation.save();
+
+        res.status(200).json(conversation);
+    } catch (error) {
+        console.log(error, 'Error');
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// Leave a group
+app.post('/api/conversation/:conversationId/leave', async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const { userId } = req.body;
+
+        const conversation = await Conversations.findById(conversationId);
+        if (!conversation) {
+            return res.status(404).json({ message: 'Conversation not found' });
+        }
+
+        // Remove user from members
+        conversation.members = conversation.members.filter(member => member.toString() !== userId);
+
+        // If user is an admin, remove from admins
+        if (conversation.admins.includes(userId)) {
+            conversation.admins = conversation.admins.filter(admin => admin.toString() !== userId);
+        }
+
+        // If no admins left, assign the first member as admin (if any)
+        if (conversation.admins.length === 0 && conversation.members.length > 0) {
+            conversation.admins.push(conversation.members[0]);
+        }
+
+        await conversation.save();
+
+        res.status(200).json({ message: 'Left the group successfully' });
+    } catch (error) {
+        console.log(error, 'Error');
+        res.status(500).send('Internal Server Error');
+    }
+});
+// Delete a group (admin only)
+app.delete('/api/conversation/:conversationId', async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const { senderId } = req.body;
+
+        const conversation = await Conversations.findById(conversationId);
+        if (!conversation) {
+            return res.status(404).json({ message: 'Conversation not found' });
+        }
+
+        // Check if sender is admin
+        if (!conversation.admins.includes(senderId)) {
+            return res.status(403).json({ message: 'Only admins can delete the group' });
+        }
+
+        // Delete all messages related to the conversation
+        await Messages.deleteMany({ conversationId });
+
+        // Delete the conversation
+        await Conversations.findByIdAndDelete(conversationId);
+
+        res.status(200).json({ message: 'Group deleted successfully' });
+    } catch (error) {
+        console.log(error, 'Error');
+        res.status(500).send('Internal Server Error');
+    }
+});
+// Add members to a group (admin only)
+app.post('/api/conversation/:conversationId/addMembers', async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const { senderId, membersToAdd } = req.body; // membersToAdd should be an array of userIds
+
+        const conversation = await Conversations.findById(conversationId);
+        if (!conversation) {
+            return res.status(404).json({ message: 'Conversation not found' });
+        }
+
+        // Check if sender is admin
+        if (!conversation.admins.includes(senderId)) {
+            return res.status(403).json({ message: 'Only admins can add members' });
+        }
+
+        // Add new members, avoiding duplicates
+        const newMembers = membersToAdd.filter(member => !conversation.members.includes(member));
+        conversation.members.push(...newMembers);
+
+        await conversation.save();
+        const conversationsss = await Conversations.findById(conversationId);
+        console.log("check add: ", conversationsss);
+        res.status(200).json({ message: 'Members added successfully', members: conversation.members });
+    } catch (error) {
+        console.log(error, 'Error');
+        res.status(500).send('Internal Server Error');
+    }
+});
+// Remove members from a group (admin only)
+app.post('/api/conversation/:conversationId/removeMembers', async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const { senderId, membersToRemove } = req.body; // membersToRemove should be an array of userIds
+
+        const conversation = await Conversations.findById(conversationId);
+        if (!conversation) {
+            return res.status(404).json({ message: 'Conversation not found' });
+        }
+
+        // Check if sender is admin
+        if (!conversation.admins.includes(senderId)) {
+            return res.status(403).json({ message: 'Only admins can remove members' });
+        }
+
+        // Remove specified members
+        conversation.members = conversation.members.filter(member => !membersToRemove.includes(member.toString()));
+        conversation.admins = conversation.admins.filter(admin => !membersToRemove.includes(admin.toString()));
+
+        // If no admins left, assign the first member as admin (if any)
+        if (conversation.admins.length === 0 && conversation.members.length > 0) {
+            conversation.admins.push(conversation.members[0]);
+        }
+
+        await conversation.save();
+
+        res.status(200).json({ message: 'Members removed successfully', members: conversation.members });
+    } catch (error) {
+        console.log(error, 'Error');
+        res.status(500).send('Internal Server Error');
+    }
+});
 
 
 app.listen(port, () => {
