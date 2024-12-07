@@ -1050,7 +1050,7 @@ useEffect(() => {
 				}
 			</div>
 				{messages?.members? (
-					<ConversationDetails members={messages.members} nameConversation={messages.nameConversation} description={messages.discription} isGroup={messages.isGroup} />
+					<ConversationDetails members={messages.members} nameConversation={messages.nameConversation} description={messages.discription} isGroup={messages.isGroup} handleLeaveGroup={handleLeaveGroup} handleRemoveMember={handleRemoveMember} handleDeleteGroup={handleDeleteGroup} isAdmin={isAdmin} addMembersHook={[showAddMembersModal, setShowAddMembersModal]} />
 				) : (
 				<div className='w-[25%] h-screen bg-light px-8 py-16 overflow-auto'>
 				<div className='text-primary text-lg'>People</div>
@@ -1118,21 +1118,10 @@ useEffect(() => {
 					)}
 				
 				</div>
-					{messages?.isGroup && (
-						<button onClick={handleLeaveGroup} className="ml-4 p-2 bg-red-500 text-white rounded">
-							Leave Group
-						</button>
-					)}
 					{messages?.isGroup && isAdmin && (
 						<div className="ml-4 flex space-x-2">
-							<button onClick={() => setShowAddMembersModal(true)} className="p-2 bg-green-500 text-white rounded">
-								Add Members
-							</button>
 							<button onClick={() => setShowRemoveMembersModal(true)} className="p-2 bg-yellow-500 text-white rounded">
 								Remove Members
-							</button>
-							<button onClick={handleDeleteGroup} className="p-2 bg-red-600 text-white rounded">
-								Delete Group
 							</button>
 						</div>
 					)}

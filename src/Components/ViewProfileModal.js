@@ -1,16 +1,10 @@
 import { Modal } from "flowbite-react"
 import { useState } from "react"
 
-export function ViewProfileModal({ user }) {
-    const [openModal, setOpenModal] = useState(false);
+export function ViewProfileModal({ user, modalHook }) {
+    const [openModal, setOpenModal] = modalHook;
     return (
         <div class='block text-center'>
-            <button type="button" onClick={() => setOpenModal(true)} id="viewProfileButton" class="text-white ml-auto mr-auto justify-center bg-gray-400 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center me-2 dark:focus:ring-blue-800">
-                <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 7.5 7.5">
-                <path d="M 1.5 7 s -0.5 0 -0.5 -0.5 s 0.5 -2 3 -2 s 3 1.5 3 2 s -0.5 0.5 -0.5 0.5 z m 2.5 -3 a 1.5 1.5 90 1 0 0 -3 a 1.5 1.5 90 0 0 0 3"/>
-                </svg>
-            </button>
-            <div class='text-sm dark:text-white'>View profile</div>
             <Modal show={openModal} onClose={() => setOpenModal(false)}>
                 <Modal.Header>View profile</Modal.Header>
                 <Modal.Body>
@@ -26,7 +20,7 @@ export function ViewProfileModal({ user }) {
                     <div class="col-span-2">
                         <label for="description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Avatar</label>
                         <div class="flex justify-center">
-                            <img class="w-36 h-36 rounded-full flex" id="updateProfileAvatar" />
+                            <img class="w-36 h-36 rounded-full flex" id="profileAvatar" />
                         </div>
                     </div>
                 </div>
