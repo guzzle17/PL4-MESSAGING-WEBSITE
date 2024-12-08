@@ -1050,7 +1050,9 @@ useEffect(() => {
 				}
 			</div>
 				{messages?.members? (
-					<ConversationDetails members={messages.members} nameConversation={messages.nameConversation} description={messages.discription} isGroup={messages.isGroup} handleLeaveGroup={handleLeaveGroup} handleRemoveMember={handleRemoveMember} handleDeleteGroup={handleDeleteGroup} isAdmin={isAdmin} addMembersHook={[showAddMembersModal, setShowAddMembersModal]} />
+					<ConversationDetails members={messages.members} nameConversation={messages.nameConversation} description={messages.discription} isGroup={messages.isGroup} avatar={currentConversation.avatar}
+					handleLeaveGroup={handleLeaveGroup} handleRemoveMember={handleRemoveMember} handleDeleteGroup={handleDeleteGroup} handleEditGroup={handleEditGroup}
+					isAdmin={isAdmin} addMembersHook={[showAddMembersModal, setShowAddMembersModal]} editGroupNameHook={[editGroupName, setEditGroupName]} editGroupAvatarHook={[editGroupAvatar, setEditGroupAvatar]} />
 				) : (
 				<div className='w-[25%] h-screen bg-light px-8 py-16 overflow-auto'>
 				<div className='text-primary text-lg'>People</div>
@@ -1074,57 +1076,6 @@ useEffect(() => {
 					</div>
 				</div>
 				)}
-				<div>
-					{messages?.isGroup && isAdmin && (
-						<button onClick={() => setShowEditGroupModal(true)} className="ml-4 p-2 bg-secondary rounded">
-							Edit Group
-						</button>
-					)}
-
-				</div>
-				<div>
-					{showEditGroupModal && (
-						<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-							<div className="bg-white w-[500px] p-6 rounded shadow-lg">
-								<h2 className="text-xl font-bold mb-4">Edit Group Information</h2>
-								<input
-									type="text"
-									placeholder="Group Name"
-									className="w-full border p-2 rounded mb-4"
-									value={editGroupName}
-									onChange={(e) => setEditGroupName(e.target.value)}
-								/>
-								<input
-									type="file"
-									className="w-full mb-4"
-									onChange={(e) => setEditGroupAvatar(e.target.files[0])}
-								/>
-								<div className="mt-4 flex justify-end">
-									<button
-										className="bg-gray-300 text-black px-4 py-2 rounded mr-2"
-										onClick={() => setShowEditGroupModal(false)}
-									>
-										Cancel
-									</button>
-									<button
-										className="bg-primary text-white px-4 py-2 rounded"
-										onClick={handleEditGroup}
-									>
-										Save Changes
-									</button>
-								</div>
-							</div>
-						</div>
-					)}
-				
-				</div>
-					{messages?.isGroup && isAdmin && (
-						<div className="ml-4 flex space-x-2">
-							<button onClick={() => setShowRemoveMembersModal(true)} className="p-2 bg-yellow-500 text-white rounded">
-								Remove Members
-							</button>
-						</div>
-					)}
 					{showAddMembersModal && (
 						<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
 							<div className="bg-white w-[500px] p-6 rounded shadow-lg">
@@ -1154,37 +1105,6 @@ useEffect(() => {
 								</div>
 								<div className="flex justify-end">
 									<button onClick={() => setShowAddMembersModal(false)} className="bg-gray-300 text-black px-4 py-2 rounded mr-2">
-										Cancel
-									</button>
-								</div>
-							</div>
-						</div>
-					)}
-
-					{showRemoveMembersModal && (
-						<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-							<div className="bg-white w-[500px] p-6 rounded shadow-lg">
-								<h2 className="text-xl font-bold mb-4">Remove Members</h2>
-								<div className="max-h-[300px] overflow-y-auto mb-4">
-									{messages.members.map(member => (
-										member._id !== user.id && ( // Prevent removing self
-											<div key={member._id} className="flex items-center justify-between p-2 border-b">
-												<div className="flex items-center">
-													<img src={userDefault} className="w-10 h-10 rounded-full mr-2" alt="User" />
-													<div>
-														<span className="font-semibold">{member.fullName}</span>
-														<span className="text-sm text-gray-600">{member.email}</span>
-													</div>
-												</div>
-												<button onClick={() => handleRemoveMember(member._id)} className="bg-red-500 text-white px-2 py-1 rounded">
-													Remove
-												</button>
-											</div>
-										)
-									))}
-								</div>
-								<div className="flex justify-end">
-									<button onClick={() => setShowRemoveMembersModal(false)} className="bg-gray-300 text-black px-4 py-2 rounded mr-2">
 										Cancel
 									</button>
 								</div>

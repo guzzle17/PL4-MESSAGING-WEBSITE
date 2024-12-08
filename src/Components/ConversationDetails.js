@@ -1,4 +1,4 @@
-import { Dropdown } from "flowbite-react";
+import { Dropdown, Modal } from "flowbite-react";
 import { useState } from "react";
 import { ViewProfileModal } from "./ViewProfileModal";
 import { LuMessageCircle } from "react-icons/lu";
@@ -6,21 +6,31 @@ import { CgProfile } from "react-icons/cg";
 import { BsPersonFillDash, BsPersonFillGear } from "react-icons/bs";
 import ConversationMediaFilesView from "./ConversationMediaFilesView";
 
-const ConversationDetails = ({ members, nameConversation, description, isGroup, handleLeaveGroup, handleRemoveMember, handleDeleteGroup, isAdmin, addMembersHook }) => {
+const ConversationDetails = ({ members, nameConversation, description, isGroup, avatar, handleLeaveGroup, handleRemoveMember, handleDeleteGroup, handleEditGroup, isAdmin, addMembersHook, editGroupNameHook, editGroupAvatarHook }) => {
     const [customizeChatListOpen, setCustomizeChatListOpen] = useState(false)
     const [chatMembersListOpen, setChatMembersListOpen] = useState(false)
     const [mediaFilesListOpen, setMediaFilesListOpen] = useState(false)
     const [mediaFilesViewOpen, setMediaFilesViewOpen] = useState("")
-    const [openModal, setOpenModal] = useState(false)
+    const [openProfileModal, setOpenProfileModal] = useState(false)
+    const [openEditGroupNameModal, setOpenEditGroupNameModal] = useState(false)
+    const [openEditGroupAvatarModal, setOpenEditGroupAvatarModal] = useState(false)
     const [user, setUser] = useState([])
     const [showAddMembersModal, setShowAddMembersModal] = addMembersHook
+    const [editGroupAvatar, setEditGroupAvatar] = editGroupAvatarHook
+    const [editGroupName, setEditGroupName] = editGroupNameHook
 
     return (
     <>
     {(!isGroup) ? (
     <div className='w-[25%] h-screen bg-light items-center dark:bg-gray-700'>
         <div class='block text-center'>
-            <img class='w-20 h-20 rounded-full mt-7 justify-self-center' src='../Assets/placeholder_avatar.jpg' />
+            {!!(avatar) ? (
+            <img class='w-20 h-20 rounded-full mt-7 justify-self-center' src={`http://localhost:8000${avatar}`} />
+            ) : (
+            <div class="flex items-center justify-center mr-auto ml-auto mt-7 w-16 h-16 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-600">
+                <svg class="w-16 h-16 text-gray-400 -left-1" fill="currentColor" viewBox="0 0 30 24" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M 15 13.5 a 4.5 4.5 90 1 0 0 -9 a 4.5 4.5 90 0 0 0 9 z m -10.5 13.5 a 10.5 10.5 90 1 1 21 0 H 4.5 z" clip-rule="evenodd"></path></svg>
+            </div>
+            )}
             <div class='font-medium dark:text-white mt-2'>
                 <div>{nameConversation}</div>
                 <div class='text-sm text-gray-500 dark:text-gray-400'>{description}</div>
@@ -28,13 +38,13 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
         </div>
         <div class='flex justify-center gap-x-10 mt-6'>
             <div class='block text-center'>
-                <button type="button" onClick={() => setOpenModal(true)} id="viewProfileButton" class="text-white ml-auto mr-auto justify-center bg-gray-400 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center me-2 dark:focus:ring-blue-800">
+                <button type="button" onClick={() => setOpenProfileModal(true)} id="viewProfileButton" class="text-white ml-auto mr-auto justify-center bg-gray-400 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center me-2 dark:focus:ring-blue-800">
                     <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 7.5 7.5">
                     <path d="M 1.5 7 s -0.5 0 -0.5 -0.5 s 0.5 -2 3 -2 s 3 1.5 3 2 s -0.5 0.5 -0.5 0.5 z m 2.5 -3 a 1.5 1.5 90 1 0 0 -3 a 1.5 1.5 90 0 0 0 3"/>
                     </svg>
                 </button>
                 <div class='text-sm dark:text-white'>View profile</div>
-                <ViewProfileModal user={members[0]} modalHook={[openModal, setOpenModal]} />
+                <ViewProfileModal user={members[0]} modalHook={[openProfileModal, setOpenProfileModal]} />
             </div>
             <div class='block text-center'>
                 <button type="button" id="searchMessagesButton" class="text-white ml-auto mr-auto bg-gray-400 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center me-2 dark:focus:ring-blue-800">
@@ -64,7 +74,13 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
     </div>) : (
     <>
         <div class='block text-center'>
-            <img class='w-20 h-20 rounded-full mt-7 justify-self-center' src='../Assets/placeholder_avatar.jpg' />
+            {!!(avatar) ? (
+            <img class='w-20 h-20 rounded-full mt-7 justify-self-center' src={`http://localhost:8000${avatar}`} />
+            ) : (
+            <div class="flex items-center justify-center mr-auto ml-auto mt-7 w-16 h-16 overflow-hidden bg-primary rounded-full dark:bg-gray-600">
+                <span class="font-medium text-white dark:text-gray-300">{nameConversation.charAt()}</span>
+            </div>
+            )}
             <div class='font-medium dark:text-white mt-2'>
                 <div>{nameConversation}</div>
                 <div class='text-sm text-gray-500 dark:text-gray-400'>{description}</div>
@@ -98,19 +114,51 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
             </button>
             {customizeChatListOpen && (
                 <div class="block text-center w-full">
-                    <button id="customizeChatNameButton" class="w-full bg-transparent hover:bg-gray-300 focus:outline-none font-medium rounded-lg text-sm gap-2 px-2 py-2.5 text-left inline-flex items-center dark:text-white" type="button">
+                    <button onClick={() => setOpenEditGroupNameModal(true)} class="w-full bg-transparent hover:bg-gray-300 focus:outline-none font-medium rounded-lg text-sm gap-2 px-2 py-2.5 text-left inline-flex items-center dark:text-white" type="button">
                     <svg class="w-7 h-7 bg-gray-300 rounded-full dark:bg-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 8 8">
                     <path d="M 5.2135 2.0365 a 0.125 0.125 90 0 0 -0.1767 0 L 4.625 2.4482 L 5.5518 3.375 l 0.4118 -0.4115 a 0.125 0.125 90 0 0 0 -0.177 z m 0.1615 1.5152 L 4.4482 2.625 L 2.8232 4.25 H 2.875 a 0.125 0.125 90 0 1 0.125 0.125 v 0.125 h 0.125 a 0.125 0.125 90 0 1 0.125 0.125 v 0.125 h 0.125 a 0.125 0.125 90 0 1 0.125 0.125 v 0.125 h 0.125 a 0.125 0.125 90 0 1 0.125 0.125 v 0.0517 z m -1.867 1.867 A 0.125 0.125 90 0 1 3.5 5.375 V 5.25 h -0.125 a 0.125 0.125 90 0 1 -0.125 -0.125 V 5 h -0.125 a 0.125 0.125 90 0 1 -0.125 -0.125 V 4.75 h -0.125 a 0.125 0.125 90 0 1 -0.125 -0.125 V 4.5 h -0.125 a 0.125 0.125 90 0 1 -0.0437 -0.008 l -0.0447 0.0445 a 0.125 0.125 90 0 0 -0.0275 0.042 l -0.5 1.25 a 0.125 0.125 90 0 0 0.1625 0.1625 l 1.25 -0.5 a 0.125 0.125 90 0 0 0.042 -0.0275 z"/>
                     </svg>
                     Change name
                     </button>
+                    <Modal show={openEditGroupNameModal} onClose={() => setOpenEditGroupNameModal(false)}>
+                        <Modal.Header>Rename chat</Modal.Header>
+                        <Modal.Body>
+                        <div class="grid gap-4 grid-cols-2">
+                            <div class="col-span-2 mb-3">
+                                <label for="groupName" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Group name</label>
+                                <input type="text" defaultValue={nameConversation} onChange={(e) => setEditGroupName(e.target.value)} name="groupName" id="groupName" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Enter group name" required />
+                            </div>
+                            <button onClick={() => setOpenEditGroupNameModal(false)} class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Cancel</button>
+                            <button onClick={handleEditGroup} class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Save</button>
+                        </div>
+                        </Modal.Body>
+                    </Modal>
 
-                    <button id="customizeChatPictureButton" class="w-full bg-transparent hover:bg-gray-300 focus:outline-none font-medium rounded-lg text-sm gap-2 px-2 py-2.5 text-left inline-flex items-center dark:text-white" type="button">
+                    <button onClick={() => setOpenEditGroupAvatarModal(true)} class="w-full bg-transparent hover:bg-gray-300 focus:outline-none font-medium rounded-lg text-sm gap-2 px-2 py-2.5 text-left inline-flex items-center dark:text-white" type="button">
                     <svg class="w-7 h-7 bg-gray-300 rounded-full dark:bg-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 8 8">
                     <path d="M 2.0005 2.75 a 0.5 0.5 90 0 1 0.5 -0.5 h 3 a 0.5 0.5 90 0 1 0.5 0.5 v 2.5 a 0.5 0.5 90 0 1 -0.5 0.5 h -3 a 0.5 0.5 90 0 1 -0.5 -0.5 z m 0.25 2.25 v 0.25 a 0.25 0.25 90 0 0 0.25 0.25 h 3 a 0.25 0.25 90 0 0 0.25 -0.25 V 4.375 l -0.9443 -0.4868 a 0.125 0.125 90 0 0 -0.1442 0.0232 l -0.9275 0.9275 l -0.665 -0.443 a 0.125 0.125 90 0 0 -0.1575 0.0155 z m 1.25 -1.625 a 0.375 0.375 90 1 0 -0.75 0 a 0.375 0.375 90 0 0 0.75 0"/>
                     </svg>
                     Change picture
                     </button>
+                    <Modal show={openEditGroupAvatarModal} onClose={() => setOpenEditGroupAvatarModal(false)}>
+                        <Modal.Header>Change avatar</Modal.Header>
+                        <Modal.Body>
+                        <div class="grid gap-4 grid-cols-2">
+                            <div class="col-span-2 mb-3">
+                                <label for="updateGroupAvatar" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Avatar</label>
+                                <div class="flex justify-center">
+                                    <img class="w-36 h-36 rounded-full flex" id="updateGroupAvatar" src="" />
+                                    <div class="ml-10 self-center">
+                                        <input onChange={(e) => {document.getElementById('updateGroupAvatar').src = URL.createObjectURL(e.target.files[0]); setEditGroupAvatar(e.target.files[0]);}} class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="changeImageInput" type="file"  accept="image/*" />
+                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-300" id="changeImageInputHelp">SVG, PNG, JPG or GIF (MAX. 800x400px).</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onClick={() => setOpenEditGroupAvatarModal(false)} class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Cancel</button>
+                            <button onClick={handleEditGroup} class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Save</button>
+                        </div>
+                        </Modal.Body>
+                    </Modal>
 
                     {isAdmin && (
                     <button onClick={handleDeleteGroup} class="w-full bg-transparent hover:bg-gray-300 focus:outline-none font-medium rounded-lg text-sm gap-2 px-2 py-2.5 text-left inline-flex items-center dark:text-white" type="button">
@@ -149,7 +197,7 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
                                         </svg>
                                     </div>}>
                                         <Dropdown.Item icon={LuMessageCircle} as="button">Message</Dropdown.Item>
-                                        <Dropdown.Item icon={CgProfile} as="button" onClick={() => {setOpenModal(true); setUser(member)}}>Profile</Dropdown.Item>
+                                        <Dropdown.Item icon={CgProfile} as="button" onClick={() => {setOpenProfileModal(true); setUser(member)}}>Profile</Dropdown.Item>
                                         {isAdmin && (<>
                                         <Dropdown.Divider />
                                         <Dropdown.Item icon={BsPersonFillDash} as="button" onClick={() => handleRemoveMember(member._id)}>Remove member</Dropdown.Item>
@@ -157,8 +205,8 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
                                         </>
                                         )}
                                     </Dropdown>
-                                    {openModal && (
-                                    <ViewProfileModal user={user} modalHook={[openModal, setOpenModal]} />
+                                    {openProfileModal && (
+                                    <ViewProfileModal user={user} modalHook={[openProfileModal, setOpenProfileModal]} />
                                     )}
                                 </div>
                             </div>
