@@ -584,6 +584,44 @@ app.post('/api/conversation/:conversationId/removeMembers', async (req, res) => 
 });
 
 
+// Phân quyền quản trị viên cho một thành viên
+app.post('/api/conversation/:conversationId/assignAdmin', async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const { senderId, memberId } = req.body;
+
+        const conversation = await Conversations.findById(conversationId);
+        if (!conversation) {
+            return res.status(404).json({ message: 'Conversation not found' });
+        }
+
+        // Kiểm tra nếu người gửi là admin
+        if (!conversation.admins.includes(senderId)) {
+            return res.status(403).json({ message: 'Only admins can assign admin roles' });
+        }
+
+        // Kiểm tra nếu memberId là thành viên của nhóm
+        if (!conversation.members.includes(memberId)) {
+            return res.status(400).json({ message: 'Member is not part of the group' });
+        }
+
+        // Kiểm tra nếu memberId đã là admin
+        if (conversation.admins.includes(memberId)) {
+            return res.status(400).json({ message: 'Member is already an admin' });
+        }
+
+        // Thêm memberId vào danh sách admins
+        conversation.admins.push(memberId);
+        await conversation.save();
+
+        res.status(200).json({ message: 'Member has been assigned as admin', admins: conversation.admins });
+    } catch (error) {
+        console.log(error, 'Error');
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
 app.listen(port, () => {
     console.log('listening on port ' + port);
 })

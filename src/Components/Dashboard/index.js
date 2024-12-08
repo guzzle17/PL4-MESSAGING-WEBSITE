@@ -274,6 +274,46 @@ useEffect(() => {
 
 
 
+//8-12
+
+	// State cho phân quyền admin
+	const [showAssignAdminModal, setShowAssignAdminModal] = useState(false);
+	const [selectedMemberForAdmin, setSelectedMemberForAdmin] = useState(null);
+	const handleAssignAdmin = async (memberId) => {
+		if (!currentConversation) return;
+
+		try {
+			const response = await fetch(`http://localhost:8000/api/conversation/${currentConversation.conversationId}/assignAdmin`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					senderId: user.id,
+					memberId: memberId,
+				}),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				alert('Admin role has been assigned successfully!');
+				// Cập nhật cuộc trò chuyện trong state
+				setConversations(conversations.map(conv => 
+					conv.conversationId === currentConversation.conversationId 
+						? { ...conv, admins: data.admins } 
+						: conv
+				));
+				setShowAssignAdminModal(false);
+			} else {
+				const error = await response.json();
+				console.error('Failed to assign admin:', error.message);
+				alert('Failed to assign admin role.');
+			}
+		} catch (err) {
+			console.error('Error assigning admin:', err);
+			alert('An error occurred while assigning admin role.');
+		}
+	};
 
 
 
@@ -1058,6 +1098,43 @@ useEffect(() => {
 							</div>
 						</div>
 					)}
+					{messages?.isGroup && isAdmin && (
+						<button onClick={() => setShowAssignAdminModal(true)} className="ml-4 p-2 bg-green-500 rounded text-white">
+							Assign Admin
+						</button>
+					)}
+					{showAssignAdminModal && (
+						<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+							<div className="bg-white w-[500px] p-6 rounded shadow-lg">
+								<h2 className="text-xl font-bold mb-4">Assign Admin Role</h2>
+								<div className="max-h-[300px] overflow-y-auto mb-4">
+									{messages.members.map(member => (
+										member._id !== user.id && !currentConversation.admins.includes(member._id) && (
+											<div key={member._id} className="flex items-center justify-between p-2 border-b">
+												<div className="flex items-center">
+													<img src={userDefault} className="w-10 h-10 rounded-full mr-2" alt="User" />
+													<div>
+														<span className="font-semibold">{member.fullName}</span>
+														<span className="text-sm text-gray-600">{member.email}</span>
+													</div>
+												</div>
+												<button onClick={() => handleAssignAdmin(member._id)} className="bg-primary text-white px-2 py-1 rounded">
+													Assign
+												</button>
+											</div>
+										)
+									))}
+								</div>
+								<div className="flex justify-end">
+									<button onClick={() => setShowAssignAdminModal(false)} className="bg-gray-300 text-black px-4 py-2 rounded mr-2">
+										Cancel
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
+
+
 			</div>
 		</div>
 	)
