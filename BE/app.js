@@ -318,7 +318,7 @@ app.post('/api/message', upload.single('file'), async (req, res) => {
                 messages.map(async (message) => {
                     const user = await Users.findById(message.senderId);
                     return {
-                        user: { id: user._id, email: user.email, fullName: user.fullName },
+                        user: { id: user._id, email: user.email, fullName: user.fullName, avatar: user.profile_picture },
                         message: message.message,
                         type: message.type,
                         file_url: message.file_url,
@@ -433,7 +433,15 @@ app.put('/api/conversation/:conversationId', upload.single('avatar'), async (req
 
         await conversation.save();
 
-        res.status(200).json(conversation);
+        res.status(200).json({
+            isGroup: true,
+            nameConversation: conversation.groupName,
+            conversationId: conversation._id,
+            discription: conversation.members.length + " thành viên",
+            admins: conversation.admins,
+            avatar: conversation.avatar,
+            members: conversation.member,
+        });
     } catch (error) {
         console.log(error, 'Error');
         res.status(500).send('Internal Server Error');
