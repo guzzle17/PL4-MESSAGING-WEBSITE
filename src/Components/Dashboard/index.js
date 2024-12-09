@@ -45,8 +45,10 @@ const Dashboard = () => {
 				const updatedConversation = await response.json();
 				// Update conversations state
 				setConversations(conversations.map(conv => 
-					conv.conversationId === updatedConversation._id ? updatedConversation : conv
+					conv.conversationId === updatedConversation.conversationId ? updatedConversation : conv
 				));
+				messages.avatar = updatedConversation.avatar;
+				messages.nameConversation = updatedConversation.nameConversation;
 				alert('Group information updated successfully!');
 				setShowEditGroupModal(false);
 			} else {
@@ -58,6 +60,7 @@ const Dashboard = () => {
 			console.error('Error editing group:', err);
 			alert('An error occurred while updating group information.');
 		}
+		
 	};
 
 
@@ -104,15 +107,16 @@ useEffect(() => {
     if (addMemberQuery) {
         const filtered = users.filter(u =>
             u.user.fullName.toLowerCase().includes(addMemberQuery.toLowerCase()) &&
-            !messages?.members?.some(member => member._id === u.user.userId)
+            !messages?.members?.some(member => member._id === u.user.receiverId)
         );
         setFilteredAddMembers(filtered.map(u => u.user));
     } else {
         setFilteredAddMembers(users
-            .filter(u => !messages?.members?.some(member => member._id === u.user.userId))
+            .filter(u => !messages?.members?.some(member => member._id === u.user.receiverId))
             .map(u => u.user)
         );
     }
+	console.log("mem: ", users);
 }, [addMemberQuery, users, messages.members]);
 
 const handleAddMember = async (memberId) => {
@@ -224,6 +228,7 @@ useEffect(() => {
     if (!socket) return;
 
     socket.on('memberAdded', data => {
+		console.log("memberAdd: ", data)
         if (currentConversation && data.conversationId === currentConversation.conversationId) {
             setConversations(conversations.map(conv => 
                 conv.conversationId === data.conversationId 
@@ -275,6 +280,46 @@ useEffect(() => {
 
 
 
+//8-12
+
+	// State cho phân quyền admin
+	const [showAssignAdminModal, setShowAssignAdminModal] = useState(false);
+	const [selectedMemberForAdmin, setSelectedMemberForAdmin] = useState(null);
+	const handleAssignAdmin = async (memberId) => {
+		if (!currentConversation) return;
+
+		try {
+			const response = await fetch(`http://localhost:8000/api/conversation/${currentConversation.conversationId}/assignAdmin`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					senderId: user.id,
+					memberId: memberId,
+				}),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				alert('Admin role has been assigned successfully!');
+				// Cập nhật cuộc trò chuyện trong state
+				setConversations(conversations.map(conv => 
+					conv.conversationId === currentConversation.conversationId 
+						? { ...conv, admins: data.admins } 
+						: conv
+				));
+				setShowAssignAdminModal(false);
+			} else {
+				const error = await response.json();
+				console.error('Failed to assign admin:', error.message);
+				alert('Failed to assign admin role.');
+			}
+		} catch (err) {
+			console.error('Error assigning admin:', err);
+			alert('An error occurred while assigning admin role.');
+		}
+	};
 
 
 
@@ -577,7 +622,7 @@ useEffect(() => {
 	// 	setMessages({ messages: resData, members, conversationId, nameConversation, discription, isGroup }) 
 	// 	console.log("messages: ", messages);
 	// }
-	const fetchMessages = async (conversationId, members, nameConversation, discription, isGroup) => {
+	const fetchMessages = async (conversationId, members, nameConversation, discription, isGroup, avatar) => {
 		const res = await fetch(`http://localhost:8000/api/message/${conversationId}?senderId=${user?.id}`, {
 			method: 'GET',
 			headers: {
@@ -585,7 +630,7 @@ useEffect(() => {
 			}
 		});
 		const resData = await res.json();
-		setMessages({ messages: resData, members, conversationId, nameConversation, discription, isGroup });
+		setMessages({ messages: resData, members, conversationId, nameConversation, discription, isGroup, avatar });
 	
 		// Check if the user is an admin
 		const conversation = conversations.find(conv => conv.conversationId === conversationId);
@@ -844,7 +889,7 @@ useEffect(() => {
 						// Hiển thị nhóm
 						<div
 							className="cursor-pointer flex items-center"
-							onClick={() => fetchMessages(conversationId, members, nameConversation, discription, isGroup)}
+							onClick={() => fetchMessages(conversationId, members, nameConversation, discription, isGroup, avatar)}
 						>
 							{!!(avatar)? <img
 								src={`http://localhost:8000${avatar}`}
@@ -852,7 +897,7 @@ useEffect(() => {
 								alt="User Avatar"
 							/>
 							:<div className="w-[60px] h-[60px] bg-primary rounded-full flex items-center justify-center text-white font-bold">
-								G
+								{nameConversation?.charAt(0)}
 							</div>}
 							<div className="ml-6">
 								<h3 className="text-lg font-semibold">{nameConversation}</h3>
@@ -865,7 +910,7 @@ useEffect(() => {
 						// Hiển thị hội thoại cá nhân
 						<div
 							className="cursor-pointer flex items-center"
-							onClick={() => fetchMessages(conversationId, members, nameConversation, discription, isGroup)}
+							onClick={() => fetchMessages(conversationId, members, nameConversation, discription, isGroup, avatar)}
 						>
 							<img
 								src={avatar ? <img
@@ -898,22 +943,35 @@ useEffect(() => {
 						<div className="cursor-pointer">
 							{messages.isGroup ? (
 								<div>
-									<div className="w-[60px] h-[60px] bg-primary rounded-full flex items-center justify-center text-white font-bold">
-										{messages.nameConversation?.charAt(0)}
-									</div>
+									{/* <div className="w-[60px] h-[60px] bg-primary rounded-full flex items-center justify-center text-white font-bold"> */}
+									{!!(messages.avatar)? <img
+												src={`http://localhost:8000${messages.avatar}`}
+												className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
+												alt="User Avatar"
+											/>
+											:<div className="w-[60px] h-[60px] bg-primary rounded-full flex items-center justify-center text-white font-bold">
+												{messages.nameConversation?.charAt(0)}
+											</div>}
+									{/* </div> */}
 									{/* <div className="text-center mt-2">
 										<p>{messages.nameConversation || "Nhóm của tôi"}</p>
 										<p>{messages.members?.length || 0} thành viên</p>
 									</div> */}
+									
 								</div>
 							) : (
-								<img
-									src={userDefault}
-									width={60}
-									height={60}
-									className="rounded-full"
-									alt="User avatar"
-								/>
+								<div>
+									<img
+										src={messages.avatar ? <img
+											src={messages.avatar ? (`http://localhost:8000${messages.avatar}`): userDefault}
+											className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
+											alt="User Avatar"
+											/>: userDefault}
+										className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
+										alt="User Avatar"
+										/>
+										
+								</div>
 							)}
 						</div>
 
@@ -937,36 +995,51 @@ useEffect(() => {
 						{
 							messages?.messages?.length > 0 ? (
 								messages.messages.map(({ message, type, file_url, user: { id } = {} }, index) => (
-									<div key={index} className={`max-w-[40%] rounded-b-xl p-1 mb-6 w-fit break-words ${id === user?.id ? 'bg-primary text-white rounded-tl-xl ml-auto' : 'bg-secondary rounded-tr-xl'}`}>
-										{message && <p className = {`ml-4 mr-4 mt-2 mb-2`}>{message}</p>}
-										{type === 'image' && <img src={`http://localhost:8000${file_url}`} alt="Image" className="max-w-full rounded cursor-pointer" onClick={() => openModal(`http://localhost:8000${file_url}`)} />}
-										{type === 'file' && (
-											<a href={`http://localhost:8000${file_url}`} target="_blank" rel="noopener noreferrer" className="text-white-600 underline">
-												{file_url.substring(8)}
-											</a>
-										)}
-										{<div ref={messageRef}></div>}
-										
-										{isModalOpen && (
-											<div
-												className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300"
-												onClick={closeModal}
-											>
-												{/* Nút đóng */}
-												<button
-													className="absolute top-5 right-5 text-white text-3xl cursor-pointer"
-													onClick={closeModal}
-												>
-													&times;
-												</button>
-												{/* Ảnh phóng to */}
-												<img
-													src={currentImage}
-													alt="Zoomed"
-													className="max-w-[90%] max-h-[90%] rounded-lg shadow-lg"
-												/>
+									<div>
+										{messages.isGroup && id !== user?.id && (
+											<div className="ml-16 text-smtext-gray-700 mb-1 italic">{user.fullName}</div>
+									  	)}
+										<div className="flex items-start mb-6">
+
+											{ id !== user?.id && <img
+												src={user.avatar ? `http://localhost:8000${user.avatar}` : userDefault}
+												className="w-[45px] h-[45px] rounded-full p-[2px] border border-primary mr-3"
+												alt="User Avatar"
+												/> 
+											}
+											<div key={index} className={`max-w-[40%] rounded-b-xl p-1 mb-6 w-fit break-words ${id === user?.id ? 'bg-primary text-white rounded-tl-xl ml-auto' : 'bg-secondary rounded-tr-xl'}`}>
+												
+												{message && <p className = {`ml-4 mr-4 mt-2 mb-2`}>{message}</p>}
+												{type === 'image' && <img src={`http://localhost:8000${file_url}`} alt="Image" className="max-w-full rounded cursor-pointer" onClick={() => openModal(`http://localhost:8000${file_url}`)} />}
+												{type === 'file' && (
+													<a href={`http://localhost:8000${file_url}`} target="_blank" rel="noopener noreferrer" className="text-white-600 underline">
+														{file_url.substring(8)}
+													</a>
+												)}
+												{<div ref={messageRef}></div>}
+												
+												{isModalOpen && (
+													<div
+														className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300"
+														onClick={closeModal}
+													>
+														{/* Nút đóng */}
+														<button
+															className="absolute top-5 right-5 text-white text-3xl cursor-pointer"
+															onClick={closeModal}
+														>
+															&times;
+														</button>
+														{/* Ảnh phóng to */}
+														<img
+															src={currentImage}
+															alt="Zoomed"
+															className="max-w-[90%] max-h-[90%] rounded-lg shadow-lg"
+														/>
+													</div>
+												)}
 											</div>
-										)}
+										</div>
 									</div>
 								))
 							) : (
@@ -1112,8 +1185,41 @@ useEffect(() => {
 						</div>
 					)}
 
-
-
+					{messages?.isGroup && isAdmin && (
+						<button onClick={() => setShowAssignAdminModal(true)} className="ml-4 p-2 bg-green-500 rounded text-white">
+							Assign Admin
+						</button>
+					)}
+					{showAssignAdminModal && (
+						<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+							<div className="bg-white w-[500px] p-6 rounded shadow-lg">
+								<h2 className="text-xl font-bold mb-4">Assign Admin Role</h2>
+								<div className="max-h-[300px] overflow-y-auto mb-4">
+									{messages.members.map(member => (
+										member._id !== user.id && !currentConversation.admins.includes(member._id) && (
+											<div key={member._id} className="flex items-center justify-between p-2 border-b">
+												<div className="flex items-center">
+													<img src={userDefault} className="w-10 h-10 rounded-full mr-2" alt="User" />
+													<div>
+														<span className="font-semibold">{member.fullName}</span>
+														<span className="text-sm text-gray-600">{member.email}</span>
+													</div>
+												</div>
+												<button onClick={() => handleAssignAdmin(member._id)} className="bg-primary text-white px-2 py-1 rounded">
+													Assign
+												</button>
+											</div>
+										)
+									))}
+								</div>
+								<div className="flex justify-end">
+									<button onClick={() => setShowAssignAdminModal(false)} className="bg-gray-300 text-black px-4 py-2 rounded mr-2">
+										Cancel
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
 
 			</div>
 		</Flowbite>
