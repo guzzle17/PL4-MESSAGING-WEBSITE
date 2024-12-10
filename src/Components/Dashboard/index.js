@@ -827,40 +827,70 @@ useEffect(() => {
 								messages.messages.map(({ message, type, file_url, user: { id } = {} }, index) => (
 									<div>
 										{messages.isGroup && id !== user?.id && (
-											<div className="ml-16 text-smtext-gray-700 mb-1 italic">{user.fullName}</div>
-									  	)}
+											<div className="ml-16 text-sm text-gray-700 mb-1 italic">{user.fullName}</div>
+										)}
 										<div className="flex items-start">
-
-											{ id !== user?.id && <img
-												src={user.avatar ? `http://localhost:8000${user.avatar}` : userDefault}
-												className="w-[45px] h-[45px] rounded-full p-[2px] border border-primary mr-3"
-												alt="User Avatar"
-												/> 
-											}
-											<div key={index} className={`max-w-[40%] rounded-b-xl p-1 mb-6 w-fit break-words ${id === user?.id ? 'bg-primary text-white rounded-tl-xl ml-auto' : 'bg-secondary rounded-tr-xl'}`}>
-												
-												{message && <p className = {`ml-4 mr-4 mt-2 mb-2`}>{message}</p>}
-												{type === 'image' && <img src={`http://localhost:8000${file_url}`} alt="Image" className="max-w-full rounded cursor-pointer" onClick={() => openModal(`http://localhost:8000${file_url}`)} />}
-												{type === 'file' && (
-													<a href={`http://localhost:8000${file_url}`} target="_blank" rel="noopener noreferrer" className="text-white-600 underline">
-														{file_url.substring(8)}
-													</a>
+											{id !== user?.id && (
+												<img
+													src={user.avatar ? `http://localhost:8000${user.avatar}` : userDefault}
+													className="w-[45px] h-[45px] rounded-full p-[2px] border border-primary mr-3"
+													alt="User Avatar"
+												/>
+											)}
+											<div
+												key={index}
+												className={`max-w-[40%] rounded-b-xl p-1 mb-6 w-fit break-words ${
+													id === user?.id ? 'bg-primary text-white rounded-tl-xl ml-auto' : 'bg-secondary rounded-tr-xl'
+												}`}
+											>
+												{message && <p className={`ml-4 mr-4 mt-2 mb-2`}>{message}</p>}
+								
+												{type === 'image' && (
+													<img
+														src={`http://localhost:8000${file_url}`}
+														alt="Image"
+														className="max-w-full rounded cursor-pointer"
+														onClick={() => openModal(`http://localhost:8000${file_url}`)}
+													/>
 												)}
-												{<div ref={messageRef}></div>}
-												
+								
+												{/* Kiểm tra đuôi file để hiển thị video */}
+												{type === 'file' &&
+													/\.(mp4|webm|ogg)$/i.test(file_url) && ( // Kiểm tra đuôi video
+														<video
+															src={`http://localhost:8000${file_url}`}
+															controls
+															className="max-w-full rounded cursor-pointer"
+														>
+															Your browser does not support the video tag.
+														</video>
+													)}
+								
+												{/* Hiển thị link tải file cho các định dạng khác */}
+												{type === 'file' &&
+													!/\.(mp4|webm|ogg)$/i.test(file_url) && (
+														<a
+															href={`http://localhost:8000${file_url}`}
+															target="_blank"
+															rel="noopener noreferrer"
+															className="text-white-600 underline"
+														>
+															{file_url.substring(8)}
+														</a>
+													)}
+								
+												<div ref={messageRef}></div>
 												{isModalOpen && (
 													<div
 														className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300"
 														onClick={closeModal}
 													>
-														{/* Nút đóng */}
 														<button
 															className="absolute top-5 right-5 text-white text-3xl cursor-pointer"
 															onClick={closeModal}
 														>
 															&times;
 														</button>
-														{/* Ảnh phóng to */}
 														<img
 															src={currentImage}
 															alt="Zoomed"
@@ -872,6 +902,8 @@ useEffect(() => {
 										</div>
 									</div>
 								))
+								
+								
 							) : (
 								<div className='text-center text-lg font-semibold mt-24'>No Messages or No Conversation Selected</div>
 							)
