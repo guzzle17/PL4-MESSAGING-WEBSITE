@@ -462,17 +462,18 @@ useEffect(() => {
 	const handleFileSelect = (e) => {
 		const selectedFile = e.target.files[0];
 		if (selectedFile) {
-		  setFile(selectedFile);
-	  
-		  // Generate a preview URL if the file is an image
-		  if (selectedFile.type.startsWith('image/')) {
-			const url = URL.createObjectURL(selectedFile);
-			setPreviewUrl(url);
-		  } else {
-			setPreviewUrl(null); // No preview for non-image files
-		  }
+			setFile(selectedFile);
+	
+			// Generate a preview URL if the file is an image or video
+			if (selectedFile.type.startsWith('image/') || selectedFile.type.startsWith('video/')) {
+				const url = URL.createObjectURL(selectedFile);
+				setPreviewUrl(url); // Tạo preview URL cho hình ảnh hoặc video
+			} else {
+				setPreviewUrl(null); // Không tạo preview cho file không phải hình ảnh/video
+			}
 		}
-	  };
+	};
+	
 
 	useEffect(() => {
 		setSocket(io('http://localhost:8080'))
@@ -952,35 +953,48 @@ useEffect(() => {
 						{file && (
 							<div className='mt-4 flex items-center'>
 								{previewUrl ? (
-								<div className='relative'>
-									<img
-									src={previewUrl}
-									alt='Selected'
-									className='w-32 h-32 object-cover rounded'
-									/>
-									<button
-									onClick={() => {
-										setFile(null);
-										setPreviewUrl(null);
-									}}
-									className='absolute top-0 right-0 bg-gray-800 text-white rounded-full p-1'
-									>
-									&times;
-									</button>
-								</div>
+									<div className='relative'>
+										{/\.(mp4|webm|ogg)$/i.test(file.name) ? ( // Kiểm tra định dạng video
+											<video
+												src={previewUrl}
+												className='w-32 h-32 object-cover rounded'
+												controls
+												autoPlay
+												loop
+											>
+												Your browser does not support the video tag.
+											</video>
+										) : (
+											<img
+												src={previewUrl}
+												alt='Selected'
+												className='w-32 h-32 object-cover rounded'
+											/>
+										)}
+										<button
+											onClick={() => {
+												setFile(null);
+												setPreviewUrl(null);
+											}}
+											className='absolute top-0 right-0 bg-gray-800 text-white rounded-full p-1'
+										>
+											&times;
+										</button>
+									</div>
 								) : (
-								<div className='flex items-center'>
-									<span className='mr-2'>{file.name}</span>
-									<button
-									onClick={() => setFile(null)}
-									className='bg-gray-800 text-white rounded-full p-1'
-									>
-									&times;
-									</button>
-								</div>
+									<div className='flex items-center'>
+										<span className='mr-2'>{file.name}</span>
+										<button
+											onClick={() => setFile(null)}
+											className='bg-gray-800 text-white rounded-full p-1'
+										>
+											&times;
+										</button>
+									</div>
 								)}
 							</div>
-							)}
+						)}
+
 					</div>
 				}
 			</div>
