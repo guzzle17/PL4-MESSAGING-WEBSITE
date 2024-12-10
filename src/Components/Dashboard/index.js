@@ -573,7 +573,7 @@ useEffect(() => {
 		} else {
 			setIsAdmin(false);
 		}
-	
+		console.log("conversaton: ", conversation)
 		setCurrentConversation(conversation);
 	};
 	
@@ -829,7 +829,7 @@ useEffect(() => {
 										{messages.isGroup && id !== user?.id && (
 											<div className="ml-16 text-smtext-gray-700 mb-1 italic">{user.fullName}</div>
 									  	)}
-										<div className="flex items-start mb-6">
+										<div className="flex items-start">
 
 											{ id !== user?.id && <img
 												src={user.avatar ? `http://localhost:8000${user.avatar}` : userDefault}

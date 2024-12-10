@@ -216,7 +216,7 @@ app.get('/api/conversations/:userId', async (req, res) => {
                     // Nếu là nhóm, trả về thông tin nhóm
                     const members = await Users.find(
                         { _id: { $in: conversation.members } },
-                        'fullName email'
+                        'fullName email profile_picture'
                     );
                     return {
                         isGroup: true,
