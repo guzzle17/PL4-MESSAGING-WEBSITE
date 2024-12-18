@@ -9,6 +9,7 @@ const io = require('socket.io')(8080, {
         origin: '*',
     }
 });
+const fs = require('fs');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -216,7 +217,7 @@ app.get('/api/conversations/:userId', async (req, res) => {
                     // Nếu là nhóm, trả về thông tin nhóm
                     const members = await Users.find(
                         { _id: { $in: conversation.members } },
-                        'fullName email'
+                        'fullName email profile_picture'
                     );
                     return {
                         isGroup: true,
@@ -657,6 +658,15 @@ app.post('/api/conversation/:conversationId/assignAdmin', async (req, res) => {
     }
 });
 
+app.get('/get-file-size', async (req, res) => {
+    const fileUrl = req.query.url;
+    fs.stat(path.join(__dirname, fileUrl), (err, stats) => {
+        if (err) {
+            return res.status(500).json({ error: 'Failed to fetch file size' });
+        }
+        res.json({ fileSize: stats.size.toString() });
+    });
+});
 
 app.listen(port, () => {
     console.log('listening on port ' + port);

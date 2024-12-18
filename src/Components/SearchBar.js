@@ -1,5 +1,4 @@
 import React, {useState} from 'react';
-import ContactsList from './ContactsList';
 
 const SearchBar = () => {
 

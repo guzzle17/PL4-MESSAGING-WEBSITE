@@ -1013,7 +1013,7 @@ useEffect(() => {
 												{type === 'image' && <img src={`http://localhost:8000${file_url}`} alt="Image" className="max-w-full rounded cursor-pointer" onClick={() => openModal(`http://localhost:8000${file_url}`)} />}
 												{type === 'file' && (
 													<a href={`http://localhost:8000${file_url}`} target="_blank" rel="noopener noreferrer" className="text-white-600 underline">
-														{file_url.substring(8)}
+														{file_url.substring(9)}
 													</a>
 												)}
 												{<div ref={messageRef}></div>}
@@ -1123,9 +1123,9 @@ useEffect(() => {
 				}
 			</div>
 				{messages?.members? (
-					<ConversationDetails members={messages.members} nameConversation={messages.nameConversation} description={messages.discription} isGroup={messages.isGroup} avatar={currentConversation.avatar}
-					handleLeaveGroup={handleLeaveGroup} handleRemoveMember={handleRemoveMember} handleDeleteGroup={handleDeleteGroup} handleEditGroup={handleEditGroup}
-					isAdmin={isAdmin} addMembersHook={[showAddMembersModal, setShowAddMembersModal]} editGroupNameHook={[editGroupName, setEditGroupName]} editGroupAvatarHook={[editGroupAvatar, setEditGroupAvatar]} />
+					<ConversationDetails members={messages.members} nameConversation={messages.nameConversation} description={messages.discription} isGroup={messages.isGroup} avatar={currentConversation.avatar} messages={messages.messages} admins={currentConversation.admins}
+					handleLeaveGroup={handleLeaveGroup} handleRemoveMember={handleRemoveMember} handleDeleteGroup={handleDeleteGroup} handleEditGroup={handleEditGroup} handleAssignAdmin={handleAssignAdmin}
+					isAdmin={isAdmin} addMembersHook={[showAddMembersModal, setShowAddMembersModal]} editGroupNameHook={[editGroupName, setEditGroupName]} editGroupAvatarHook={[editGroupAvatar, setEditGroupAvatar]} currentUser={user} />
 				) : (
 				<div className='w-[25%] h-screen bg-light px-8 py-16 overflow-auto'>
 				<div className='text-primary text-lg'>People</div>
@@ -1178,42 +1178,6 @@ useEffect(() => {
 								</div>
 								<div className="flex justify-end">
 									<button onClick={() => setShowAddMembersModal(false)} className="bg-gray-300 text-black px-4 py-2 rounded mr-2">
-										Cancel
-									</button>
-								</div>
-							</div>
-						</div>
-					)}
-
-					{messages?.isGroup && isAdmin && (
-						<button onClick={() => setShowAssignAdminModal(true)} className="ml-4 p-2 bg-green-500 rounded text-white">
-							Assign Admin
-						</button>
-					)}
-					{showAssignAdminModal && (
-						<div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-							<div className="bg-white w-[500px] p-6 rounded shadow-lg">
-								<h2 className="text-xl font-bold mb-4">Assign Admin Role</h2>
-								<div className="max-h-[300px] overflow-y-auto mb-4">
-									{messages.members.map(member => (
-										member._id !== user.id && !currentConversation.admins.includes(member._id) && (
-											<div key={member._id} className="flex items-center justify-between p-2 border-b">
-												<div className="flex items-center">
-													<img src={userDefault} className="w-10 h-10 rounded-full mr-2" alt="User" />
-													<div>
-														<span className="font-semibold">{member.fullName}</span>
-														<span className="text-sm text-gray-600">{member.email}</span>
-													</div>
-												</div>
-												<button onClick={() => handleAssignAdmin(member._id)} className="bg-primary text-white px-2 py-1 rounded">
-													Assign
-												</button>
-											</div>
-										)
-									))}
-								</div>
-								<div className="flex justify-end">
-									<button onClick={() => setShowAssignAdminModal(false)} className="bg-gray-300 text-black px-4 py-2 rounded mr-2">
 										Cancel
 									</button>
 								</div>

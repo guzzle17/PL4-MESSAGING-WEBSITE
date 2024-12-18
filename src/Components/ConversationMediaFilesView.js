@@ -1,13 +1,49 @@
-const ConversationMediaFilesView = ({selection}) => {
-    let selectedTab = "Media"
+import { useState, useEffect } from 'react'
+import { json } from 'react-router'
+
+const ConversationMediaFilesView = ({selection, messages}) => {
+    const [selectedTab, setSelectedTab] = useState('Media')
+    let fileSize = ""
+    const [fileUrl, setFileUrl] = useState("")
+    const isVideo =['.mpg', '.mp2', '.mpeg', '.mpe', '.mpv', '.mp4']
+
+    useEffect(() => {
+        const getFileSize = async (url) => {
+            try {
+                const res = await fetch(`http://localhost:8000/get-file-size?url=${url}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                const data = await res.json()
+                fileSize = data.fileSize
+                
+            } catch (err) {
+                throw new Error(err);
+            }
+        }
+        getFileSize(fileUrl)
+    }, [fileUrl])
+
     const handleTabChange = (id) => {
         if (id !== null){
             if (id !== selectedTab) {
                 document.getElementById(id).innerHTML = '<a href="#" class="inline-block w-full py-3 text-blue-600 bg-gray-200 rounded-full active dark:bg-gray-800 dark:text-blue-500">'+id+'</a>';
                 document.getElementById(selectedTab).innerHTML = '<a href="#" class="inline-block w-full py-3 rounded-full hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-300">'+selectedTab+'</a>';
-                selectedTab = id;
+                setSelectedTab(id)
             }
         }
+    }
+    const onVideoMouseOver = (e) => {
+        const videoElement = document.getElementById(e.target.id)
+        if (!videoElement.hasAttribute('controls'))
+            videoElement.setAttribute('controls', 'controls')
+    }
+    const onVideoMouseOut = (e) => {
+        const videoElement = document.getElementById(e.target.id)
+        if (videoElement.hasAttribute('controls'))
+            videoElement.removeAttribute('controls')
     }
     return (
         <div onLoad={() => handleTabChange(selection)}>
@@ -19,35 +55,45 @@ const ConversationMediaFilesView = ({selection}) => {
                     <a href="#" class="inline-block w-full py-3 rounded-full hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-300">Files</a>
                 </li>
             </ul>
+            {(selectedTab === 'Media') ? (
             <div class="grid grid-cols-2 md:grid-cols-3 w-[90%] ml-auto mr-auto mt-4 gap-1 overflow-auto">
-                <div>
-                    <img class="h-auto max-w-full" src="https://flowbite.s3.amazonaws.com/docs/gallery/square/image.jpg" alt="" />
-                </div>
-                <div>
-                    <img class="h-auto max-w-full" src="https://flowbite.s3.amazonaws.com/docs/gallery/square/image-1.jpg" alt="" />
-                </div>
-                <div>
-                    <img class="h-auto max-w-full " src="https://flowbite.s3.amazonaws.com/docs/gallery/square/image-2.jpg" alt="" />
-                </div>
-                <div>
-                    <img class="h-auto max-w-full " src="https://flowbite.s3.amazonaws.com/docs/gallery/square/image-3.jpg" alt="" />
-                </div>
-                <div>
-                    <img class="h-auto max-w-full " src="https://flowbite.s3.amazonaws.com/docs/gallery/square/image-4.jpg" alt="" />
-                </div>
-                <div>
-                    <img class="h-auto max-w-full " src="https://flowbite.s3.amazonaws.com/docs/gallery/square/image-5.jpg" alt="" />
-                </div>
-                <div>
-                    <img class="h-auto max-w-full " src="https://flowbite.s3.amazonaws.com/docs/gallery/square/image-6.jpg" alt="" />
-                </div>
-                <div>
-                    <img class="h-auto max-w-full " src="https://flowbite.s3.amazonaws.com/docs/gallery/square/image-7.jpg" alt="" />
-                </div>
-                <div>
-                    <img class="h-auto max-w-full " src="https://flowbite.s3.amazonaws.com/docs/gallery/square/image-8.jpg" alt="" />
-                </div>
+            {messages.map(({ type, file_url }) => (
+                <>
+                {(type === 'image') && (
+                    <div>
+                    <img class="h-full max-w-full" src={`http://localhost:8000${file_url}`} />
+                    </div>
+                )}
+                {(type === 'file') && (/\.(mp4|webm|ogg)$/i.test(file_url)) && (
+                    <div>
+                    <video id={file_url} class="h-auto max-w-full" src={`http://localhost:8000${file_url}`} onMouseOver={onVideoMouseOver} onMouseOut={onVideoMouseOut} />
+                    </div>
+                )}
+                </>
+            ))}
+            </div>) : (
+            <div class="block divide-y">
+            {messages.map(({ type, file_url }) => (
+                <>
+                {(type === 'file') && (!/\.(mp4|webm|ogg)$/i.test(file_url)) && (
+                    <button onClick={() => window.open(`http://localhost:8000${file_url}`)} onMouseOver={() => setFileUrl(file_url)}>
+                        <div class="flex items-center justify-between ml-2 mt-2 mr-2">
+                            <div class="flex items-center gap-2">
+                                <div class="flex items-center justify-center mr-auto ml-auto w-9 h-9 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-600">
+                                    <svg class="w-9 h-9 text-gray-400 -left-1" fill="currentColor" viewBox="0 0 30 24" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M 15 13.5 a 4.5 4.5 90 1 0 0 -9 a 4.5 4.5 90 0 0 0 9 z m -10.5 13.5 a 10.5 10.5 90 1 1 21 0 H 4.5 z" clip-rule="evenodd"></path></svg>
+                                </div>
+                                <div class="text-left text-sm dark:text-white">
+                                    <div class="font-medium">{file_url.substring(9)}</div>
+                                    <div class="text-gray-500 dark:text-gray-400">{fileSize}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </button>
+                )}
+                </>
+            ))}
             </div>
+            )}
         </div>
     )
 }

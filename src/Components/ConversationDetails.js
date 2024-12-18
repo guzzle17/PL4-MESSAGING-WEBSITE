@@ -5,8 +5,9 @@ import { LuMessageCircle } from "react-icons/lu";
 import { CgProfile } from "react-icons/cg";
 import { BsPersonFillDash, BsPersonFillGear } from "react-icons/bs";
 import ConversationMediaFilesView from "./ConversationMediaFilesView";
+import { SearchModal } from "./SearchModal";
 
-const ConversationDetails = ({ members, nameConversation, description, isGroup, avatar, handleLeaveGroup, handleRemoveMember, handleDeleteGroup, handleEditGroup, isAdmin, addMembersHook, editGroupNameHook, editGroupAvatarHook }) => {
+const ConversationDetails = ({ members, nameConversation, description, isGroup, avatar, messages, admins, handleLeaveGroup, handleRemoveMember, handleDeleteGroup, handleEditGroup, handleAssignAdmin, isAdmin, addMembersHook, editGroupNameHook, editGroupAvatarHook, currentUser }) => {
     const [customizeChatListOpen, setCustomizeChatListOpen] = useState(false)
     const [chatMembersListOpen, setChatMembersListOpen] = useState(false)
     const [mediaFilesListOpen, setMediaFilesListOpen] = useState(false)
@@ -14,6 +15,7 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
     const [openProfileModal, setOpenProfileModal] = useState(false)
     const [openEditGroupNameModal, setOpenEditGroupNameModal] = useState(false)
     const [openEditGroupAvatarModal, setOpenEditGroupAvatarModal] = useState(false)
+    const [openSearchModal, setOpenSearchModal] = useState(false)
     const [user, setUser] = useState([])
     const [showAddMembersModal, setShowAddMembersModal] = addMembersHook
     const [editGroupAvatar, setEditGroupAvatar] = editGroupAvatarHook
@@ -47,7 +49,7 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
                 <ViewProfileModal user={members[0]} modalHook={[openProfileModal, setOpenProfileModal]} />
             </div>
             <div class='block text-center'>
-                <button type="button" id="searchMessagesButton" class="text-white ml-auto mr-auto bg-gray-400 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center me-2 dark:focus:ring-blue-800">
+                <button type="button" onClick={() => setOpenSearchModal(true)} id="searchMessagesButton" class="text-white ml-auto mr-auto bg-gray-400 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center me-2 dark:focus:ring-blue-800">
                     <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 7.5 7.5">
                     <path d="M 5.871 5.172 a 3.25 3.25 90 1 0 -0.6985 0.699 h -0.0005 q 0.022 0.03 0.049 0.0575 l 1.925 1.925 a 0.5 0.5 90 0 0 0.7075 -0.707 l -1.925 -1.925 a 0.5 0.5 90 0 0 -0.0575 -0.05 z M 6 3.25 a 2.75 2.75 90 1 1 -5.5 0 a 2.75 2.75 90 0 1 5.5 0"/>
                     </svg>
@@ -56,7 +58,7 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
             </div>
         </div>
         <div class="block mt-6">
-            <ConversationMediaFilesView selection={"Media"} /> 
+            <ConversationMediaFilesView selection={"Media"} messages={messages} /> 
         </div>
     </div>) : (
     <div className='w-[25%] h-screen bg-light items-center dark:bg-gray-700'>
@@ -70,7 +72,7 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
             </button>
             <span>Media & files</span>
         </div>
-        <ConversationMediaFilesView selection={mediaFilesViewOpen} />
+        <ConversationMediaFilesView selection={mediaFilesViewOpen} messages={messages} />
     </div>) : (
     <>
         <div class='block text-center'>
@@ -88,7 +90,7 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
         </div>
         <div class='flex justify-center gap-x-10 mt-6'>
             <div class='block text-center'>
-                <button type="button" id="searchMessagesButton" class="text-white ml-auto mr-auto bg-gray-400 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center me-2 dark:focus:ring-blue-800">
+                <button type="button" onClick={() => setOpenSearchModal(true)} id="searchMessagesButton" class="text-white ml-auto mr-auto bg-gray-400 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm p-2.5 text-center inline-flex items-center me-2 dark:focus:ring-blue-800">
                     <svg class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 7.5 7.5">
                     <path d="M 5.871 5.172 a 3.25 3.25 90 1 0 -0.6985 0.699 h -0.0005 q 0.022 0.03 0.049 0.0575 l 1.925 1.925 a 0.5 0.5 90 0 0 0.7075 -0.707 l -1.925 -1.925 a 0.5 0.5 90 0 0 -0.0575 -0.05 z M 6 3.25 a 2.75 2.75 90 1 1 -5.5 0 a 2.75 2.75 90 0 1 5.5 0"/>
                     </svg>
@@ -147,7 +149,13 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
                             <div class="col-span-2 mb-3">
                                 <label for="updateGroupAvatar" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Avatar</label>
                                 <div class="flex justify-center">
-                                    <img class="w-36 h-36 rounded-full flex" id="updateGroupAvatar" src="" />
+                                    {!!(avatar) ? (
+                                    <img class='w-36 h-36 rounded-full mt-7 justify-self-center' src={`http://localhost:8000${avatar}`} />
+                                    ) : (
+                                    <div class="flex items-center justify-center mr-auto ml-auto mt-7 w-36 h-36 overflow-hidden bg-primary rounded-full dark:bg-gray-600">
+                                        <span class="font-medium text-3xl text-white dark:text-gray-300">{nameConversation.charAt()}</span>
+                                    </div>
+                                    )}
                                     <div class="ml-10 self-center">
                                         <input onChange={(e) => {document.getElementById('updateGroupAvatar').src = URL.createObjectURL(e.target.files[0]); setEditGroupAvatar(e.target.files[0]);}} class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="changeImageInput" type="file"  accept="image/*" />
                                         <p class="mt-1 text-sm text-gray-500 dark:text-gray-300" id="changeImageInputHelp">SVG, PNG, JPG or GIF (MAX. 800x400px).</p>
@@ -183,7 +191,13 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
                         return (
                             <div class="flex items-center justify-between ml-2 mt-2 mr-2">
                                 <div class="flex items-center gap-2">
-                                    <img class="w-8 h-8 rounded-full" src="" />
+                                    {!!(member.profile_picture) ? (
+                                    <img class='w-8 h-8 rounded-full' src={`http://localhost:8000${member.profile_picture}`} />
+                                    ) : (
+                                    <div class="flex items-center justify-center mr-auto ml-auto w-9 h-9 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-600">
+                                        <svg class="w-9 h-9 text-gray-400 -left-1" fill="currentColor" viewBox="0 0 30 24" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M 15 13.5 a 4.5 4.5 90 1 0 0 -9 a 4.5 4.5 90 0 0 0 9 z m -10.5 13.5 a 10.5 10.5 90 1 1 21 0 H 4.5 z" clip-rule="evenodd"></path></svg>
+                                    </div>
+                                    )}
                                     <div class="text-sm dark:text-white">
                                         <div class="font-medium">{member.fullName}</div>
                                         <div class="text-gray-500 dark:text-gray-400">Placeholder</div>
@@ -198,10 +212,10 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
                                     </div>}>
                                         <Dropdown.Item icon={LuMessageCircle} as="button">Message</Dropdown.Item>
                                         <Dropdown.Item icon={CgProfile} as="button" onClick={() => {setOpenProfileModal(true); setUser(member)}}>Profile</Dropdown.Item>
-                                        {isAdmin && (<>
+                                        {isAdmin && (member._id !== currentUser.id) &&  (<>
                                         <Dropdown.Divider />
                                         <Dropdown.Item icon={BsPersonFillDash} as="button" onClick={() => handleRemoveMember(member._id)}>Remove member</Dropdown.Item>
-                                        <Dropdown.Item icon={BsPersonFillGear} as="button">Make admin</Dropdown.Item>
+                                        {!admins.includes(member._id) && (<Dropdown.Item icon={BsPersonFillGear} as="button" onClick={() => handleAssignAdmin(member._id)}>Make admin</Dropdown.Item>)}
                                         </>
                                         )}
                                     </Dropdown>
@@ -253,6 +267,7 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
         </div>
     </>)}
     </div>)}
+    {openSearchModal && <SearchModal modalHook={[openSearchModal, setOpenSearchModal]} messages={messages} members={members} currentUser={currentUser} />}
     </>
     )
 }
