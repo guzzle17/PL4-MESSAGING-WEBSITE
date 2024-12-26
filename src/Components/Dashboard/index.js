@@ -878,7 +878,7 @@ useEffect(() => {
 			)
 		}) : <div className='text-center text-lg font-semibold mt-24'>No Conversations</div>
 		):(conversations.length > 0 ? (
-			conversations.map(({ conversationId, isGroup, nameConversation, discription, members, avatar }) => (
+			conversations.map(({ conversationId, isGroup, nameConversation, discription, members, avatar, unread }) => (
 				
 				<div
 					key={conversationId}
@@ -904,6 +904,9 @@ useEffect(() => {
 								<p className="text-sm font-light text-gray-600">
 									{discription}
 								</p>
+								{unread && (
+                                                <span className="ml-auto bg-red-500 text-white rounded-full h-4 w-4 flex items-center justify-center text-xs">•</span>
+                                            )}
 							</div>
 						</div>
 					) : (
@@ -924,6 +927,9 @@ useEffect(() => {
 							<div className="ml-6">
 								<h3 className="text-lg font-semibold">{nameConversation}</h3>
 								<p className="text-sm font-light text-gray-600">{discription}</p>
+								{unread && (
+                                                <span className="ml-auto bg-red-500 text-white rounded-full h-4 w-4 flex items-center justify-center text-xs">•</span>
+                                            )}
 							</div>
 						</div>
 					)}
@@ -999,7 +1005,7 @@ useEffect(() => {
 										{messages.isGroup && id !== user?.id && (
 											<div className="ml-16 text-smtext-gray-700 mb-1 italic">{user.fullName}</div>
 									  	)}
-										<div className="flex items-start mb-6">
+										<div className="flex items-start">
 
 											{ id !== user?.id && <img
 												src={user.avatar ? `http://localhost:8000${user.avatar}` : userDefault}

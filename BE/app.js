@@ -213,6 +213,21 @@ app.get('/api/conversations/:userId', async (req, res) => {
         // Xử lý dữ liệu trả về
         const conversationUserData = await Promise.all(
             conversations.map(async (conversation) => {
+                let unread = false;
+                if (conversation.last_message) {
+                    // Tìm lastRead cho user
+                    console.log("userLastRead: ", conversation.lastRead, userId);
+                    const userLastRead = conversation.lastRead.find(lr => lr.userId.toString() === userId);
+                    if (userLastRead) {
+                        const lastReadMessage = await Messages.findById(userLastRead.lastMessage);
+                        if (lastReadMessage && conversation.last_message.created_at > lastReadMessage.created_at) {
+                            unread = true;
+                        }   
+                    } else {
+                        // Nếu không có lastRead, đánh dấu là chưa đọc
+                        unread = true;
+                    }
+                }
                 if (conversation.isGroup) {
                     // Nếu là nhóm, trả về thông tin nhóm
                     const members = await Users.find(
@@ -227,6 +242,8 @@ app.get('/api/conversations/:userId', async (req, res) => {
                         admins: conversation.admins,
                         avatar: conversation.avatar,
                         members,
+                        unread,
+                        updated_at: conversation.updated_at
                     };
                 } else {
                     // Nếu là hội thoại cá nhân, tìm người nhận
@@ -245,10 +262,13 @@ app.get('/api/conversations/:userId', async (req, res) => {
                         admins: [],
                         avatar: user.profile_picture,
                         conversationId: conversation._id,
+                        unread,
+                        updated_at: conversation.updated_at
                     };
                 }
             })
         );
+        conversationUserData.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
         res.status(200).json(conversationUserData);
     } catch (error) {
@@ -292,6 +312,7 @@ app.post('/api/message', upload.single('file'), async (req, res) => {
           file_url,
         });
         await newMessage.save();
+        await Conversations.findByIdAndUpdate(newConversation._id, { last_message: newMessage._id, updated_at: newMessage.created_at });
         return res.status(200).json({ message: newMessage });
       } 
       const newMessage = new Messages({
@@ -302,6 +323,7 @@ app.post('/api/message', upload.single('file'), async (req, res) => {
         file_url,
       });
       await newMessage.save();
+      await Conversations.findByIdAndUpdate(conversationId, { last_message: newMessage._id, updated_at: newMessage.created_at });
       res.status(200).json({ message: newMessage });
     } catch (error) {
       console.log(error, 'Error');
@@ -312,6 +334,7 @@ app.post('/api/message', upload.single('file'), async (req, res) => {
   app.get('/api/message/:conversationId', async (req, res) => {
     try {
         const { conversationId } = req.params;
+        const userId = req.query.senderId;
         console.log(req.params);
         const checkMessages = async (conversationId) => {
             const messages = await Messages.find({ conversationId }).lean();
@@ -326,6 +349,21 @@ app.post('/api/message', upload.single('file'), async (req, res) => {
                     };  
                 })
             );
+            if (messages.length > 0) {
+                const lastMessage = messages[messages.length - 1];
+                const convo = await Conversations.findById(conversationId); // Không sử dụng callback
+                if (convo) {
+                    console.log("lastRead: ", convo.lastRead);
+                    const existingRead = convo.lastRead.find(lr => lr.userId.toString() === userId);
+                    if (existingRead) {
+                        existingRead.lastMessage = lastMessage._id;
+                    } else {
+                        console.log("pushhhhhhhhhhhhhhhhhhhhh", userId, lastMessage._id)
+                        convo.lastRead.push({ userId, lastMessage: lastMessage._id });
+                    }
+                    await convo.save();
+                }
+            }
             console.log("messageUserData: ", messageUserData);
             res.status(200).json(messageUserData);
         };
