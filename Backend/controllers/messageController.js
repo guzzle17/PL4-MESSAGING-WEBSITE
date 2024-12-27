@@ -98,7 +98,13 @@ exports.getMessagesByConversation = async (req, res) => {
             members: { $all: [req.query.senderId, req.query.receiverId] },
         });
         if (checkConversation.length > 0) {
-            checkMessages(checkConversation[0]._id);
+          if (req.query.receiverId !== '') {
+            const directConversation = checkConversation.find(conversation => !conversation.isGroup)
+            if (directConversation != null)
+              checkMessages(directConversation._id)
+            else res.status(200).json([])
+          }
+          else checkMessages(checkConversation[0]._id);
         } else {
             res.status(200).json([]);
         }

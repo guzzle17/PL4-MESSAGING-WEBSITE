@@ -631,7 +631,6 @@ export default function Dashboard() {
           handleLogout={handleLogout}
           setShowCreateGroupModal={setShowCreateGroupModal}
           setShowUpdateProfileModal={setShowUpdateProfileModal}
-          findConversation={findConversation}
         />
 
         {/* --------- KHUNG CHAT Ở GIỮA --------- */}
