@@ -118,7 +118,7 @@ exports.updateGroupInformation = async (req, res) => {
       }
   
       // Tìm cuộc trò chuyện theo ID
-      const conversation = await Conversation.findById(conversationId);
+      const conversation = await Conversations.findById(conversationId);
       if (!conversation) {
         return res.status(404).json({ message: 'Conversation not found' });
       }
@@ -210,8 +210,7 @@ exports.deleteGroupConversations = async (req, res) => {
         await Conversations.findByIdAndDelete(conversationId);
 
         res.status(200).json({ message: 'Group deleted successfully' });
-        
-        io.emit('groupDeleted', { conversationId });
+       
 
     } catch (error) {
         console.log(error, 'Error');
@@ -243,7 +242,7 @@ exports.addMembersToGroupConversations = async (req, res) => {
         console.log("check add: ", conversationsss);
         res.status(200).json({ message: 'Members added successfully', members: conversation.members });
         // After adding a member
-        io.to(conversationId).emit('memberAdded', { conversationId, newMembers: membersToAdd });
+        // io.to(conversationId).emit('memberAdded', { conversationId, newMembers: membersToAdd });
 
         
 
@@ -283,7 +282,7 @@ exports.removeMembersFromGroupConversations = async (req, res) => {
 
         res.status(200).json({ message: 'Members removed successfully', members: conversation.members });
         // After removing a member
-        io.to(conversationId).emit('memberRemoved', { conversationId, removedMembers: membersToRemove });
+        // io.to(conversationId).emit('memberRemoved', { conversationId, removedMembers: membersToRemove });
 
     } catch (error) {
         console.log(error, 'Error');

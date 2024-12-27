@@ -1,0 +1,21 @@
+.InputButton {
+    float: left;
+    width: 40px;
+    height: 40px;
+    left: 15px;
+    position: relative;
+    color: black;
+}
+
+.InputButton:hover {
+    border-radius: 50%;
+    background-color: lightgray;
+}
+
+span.InputMenu {
+    display: inline-block;
+    font-weight: bolder;
+    font-size: 28px;
+    color: grey;
+    user-select: none;
+}

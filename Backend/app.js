@@ -21,7 +21,7 @@ connectDB();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/conversations', conversationRoutes);
+app.use('/api/conversation', conversationRoutes);
 app.use('/api/message', messageRoutes);
 
 // Default route
