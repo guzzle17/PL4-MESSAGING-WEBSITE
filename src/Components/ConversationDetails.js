@@ -7,7 +7,7 @@ import { BsPersonFillDash, BsPersonFillGear } from "react-icons/bs";
 import ConversationMediaFilesView from "./ConversationMediaFilesView";
 import { SearchModal } from "./SearchModal";
 
-const ConversationDetails = ({ members, nameConversation, description, isGroup, avatar, messages, admins, handleLeaveGroup, handleRemoveMember, handleDeleteGroup, handleEditGroup, handleAssignAdmin, isAdmin, addMembersHook, editGroupNameHook, editGroupAvatarHook, currentUser }) => {
+const ConversationDetails = ({ members, nameConversation, description, isGroup, avatar, messages, admins, handleLeaveGroup, handleRemoveMember, handleDeleteGroup, handleEditGroup, handleAssignAdmin, isAdmin, addMembersHook, editGroupNameHook, editGroupAvatarHook, currentUser, findConversation }) => {
     const [customizeChatListOpen, setCustomizeChatListOpen] = useState(false)
     const [chatMembersListOpen, setChatMembersListOpen] = useState(false)
     const [mediaFilesListOpen, setMediaFilesListOpen] = useState(false)
@@ -210,7 +210,7 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
                                         <path d="M2 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm6.041 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM14 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/>
                                         </svg>
                                     </div>}>
-                                        <Dropdown.Item icon={LuMessageCircle} as="button">Message</Dropdown.Item>
+                                        <Dropdown.Item icon={LuMessageCircle} as="button" onClick={() => findConversation([member], member.fullName, member.email, false, member.profile_picture)}>Message</Dropdown.Item>
                                         <Dropdown.Item icon={CgProfile} as="button" onClick={() => {setOpenProfileModal(true); setUser(member)}}>Profile</Dropdown.Item>
                                         {isAdmin && (member._id !== currentUser.id) &&  (<>
                                         <Dropdown.Divider />

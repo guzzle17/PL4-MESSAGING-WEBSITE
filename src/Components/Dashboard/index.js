@@ -622,8 +622,16 @@ useEffect(() => {
 	// 	setMessages({ messages: resData, members, conversationId, nameConversation, discription, isGroup }) 
 	// 	console.log("messages: ", messages);
 	// }
+	const findConversation = async (members, nameConversation, discription, isGroup, avatar) => {
+		const conversation = conversations.find(conversation => {
+			if (conversation.nameConversation === nameConversation && !conversation.isGroup && conversation.members[0]._id === members[0]._id)
+				return conversation
+		})
+		fetchMessages(conversation.conversationId, members, nameConversation, discription, isGroup, avatar)
+	}
+
 	const fetchMessages = async (conversationId, members, nameConversation, discription, isGroup, avatar) => {
-		const res = await fetch(`http://localhost:8000/api/message/${conversationId}?senderId=${user?.id}`, {
+		const res = await fetch(`http://localhost:8000/api/message/${conversationId}?senderId=${user?.id}&receiverId=${members[0]._id}`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -1126,7 +1134,7 @@ useEffect(() => {
 				{!!currentConversation ? (
 					<ConversationDetails members={messages.members} nameConversation={messages.nameConversation} description={messages.discription} isGroup={messages.isGroup} avatar={messages.avatar} messages={messages.messages} admins={currentConversation?.admins}
 					handleLeaveGroup={handleLeaveGroup} handleRemoveMember={handleRemoveMember} handleDeleteGroup={handleDeleteGroup} handleEditGroup={handleEditGroup} handleAssignAdmin={handleAssignAdmin}
-					isAdmin={isAdmin} addMembersHook={[showAddMembersModal, setShowAddMembersModal]} editGroupNameHook={[editGroupName, setEditGroupName]} editGroupAvatarHook={[editGroupAvatar, setEditGroupAvatar]} currentUser={user} />
+					isAdmin={isAdmin} addMembersHook={[showAddMembersModal, setShowAddMembersModal]} editGroupNameHook={[editGroupName, setEditGroupName]} editGroupAvatarHook={[editGroupAvatar, setEditGroupAvatar]} currentUser={user} findConversation={findConversation} />
 				) : (
 				<div className='w-[25%] h-screen bg-light px-8 py-16 overflow-auto'>
 				<div className='text-primary text-lg'>People</div>
