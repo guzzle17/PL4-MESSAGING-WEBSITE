@@ -34,7 +34,7 @@ export default function Dashboard() {
 
   // Tạo nhóm:
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredUsers, setFilteredUsers] = useState([]);  
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedMembers, setSelectedMembers] = useState([]);
 
   // Thêm thành viên:
@@ -50,6 +50,9 @@ export default function Dashboard() {
   // Upload file
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+
+  //
+  const [filteredGroups, setFilteredGroups] = useState([])
 
   // ------------------ USE EFFECTS ------------------
   // Kết nối socket
@@ -221,6 +224,22 @@ export default function Dashboard() {
     }
   }, [searchQuery, users]);
 
+  // Xử lý tìm kiếm nhóm
+  useEffect(() => {
+    if (searchQuery) {
+      const filtered = conversations.filter((c) =>
+        c.nameConversation.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      const groupList = filtered.map(i => i);
+      setFilteredGroups(groupList)
+    }
+    else {
+      const filtered = conversations.filter(c => c.isGroup)
+      const groupList = filtered.map(i => i);
+      setFilteredGroups(groupList)
+    }
+  }, [searchQuery, conversations])
+
   // Xử lý tìm kiếm add member (showAddMembersModal)
   useEffect(() => {
     if (addMemberQuery) {
@@ -301,7 +320,6 @@ export default function Dashboard() {
     const formData = new FormData();
     formData.append('conversationId', messages?.conversationId);
     formData.append('senderId', user?.id);
-    console.log(receiver)
     formData.append('receiverId', receiver.receiverId)
     if (message) formData.append('message', message);
     if (file) formData.append('file', file);
@@ -627,6 +645,7 @@ export default function Dashboard() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           filteredUsers={filteredUsers}
+          filteredGroups={filteredGroups}
           fetchMessages={fetchMessages}
           handleLogout={handleLogout}
           setShowCreateGroupModal={setShowCreateGroupModal}

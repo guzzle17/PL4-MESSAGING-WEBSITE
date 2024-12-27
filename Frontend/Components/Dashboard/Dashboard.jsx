@@ -301,7 +301,6 @@ export default function Dashboard() {
     const formData = new FormData();
     formData.append('conversationId', messages?.conversationId);
     formData.append('senderId', user?.id);
-    console.log(receiver)
     formData.append('receiverId', receiver.receiverId)
     if (message) formData.append('message', message);
     if (file) formData.append('file', file);
