@@ -644,7 +644,7 @@ useEffect(() => {
 	};
 	
 
-	const sendMessage = async () => {
+	const sendMessage = async (receiver) => {
 		if (!message && !file) {
 			// Không gửi nếu không có nội dung và không có tệp
 			return;
@@ -653,6 +653,7 @@ useEffect(() => {
 		const formData = new FormData();
 		formData.append('conversationId', messages?.conversationId);
 		formData.append('senderId', user?.id);
+		formData.append('receiverId', receiver?.receiverId)
 	
 		if (message) {
 			formData.append('message', message);
@@ -867,7 +868,7 @@ useEffect(() => {
 		filteredUsers.map((user) => {
 			return (
 				<div className='flex items-center py-8 border-b border-b-gray-300'>
-					<div className='cursor-pointer flex items-center' onClick={() => fetchMessages('new', user)}>
+					<div className='cursor-pointer flex items-center' onClick={() => fetchMessages('new', [user], user.fullName, user.email, false, user.profile_picture)}>
 						<div><img src={userDefault} className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary" /></div>
 						<div className='ml-6'>
 							<h3 className='text-lg font-semibold'>{user?.fullName}</h3>
@@ -1052,8 +1053,8 @@ useEffect(() => {
 				{
 					messages?.nameConversation &&
 					<div className='p-14 w-full flex items-center'>
-						<Input placeholder='Type a message...' value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => {         if (e.key === 'Enter') {           sendMessage();       }       }} className='w-[100%]' inputClassName='p-4 border-0 shadow-md rounded-full bg-light focus:ring-0 focus:border-0 outline-none w-[99%]' />
-						<div className={`ml-4 p-2 cursor-pointer bg-light rounded-full ${(!message && !file) && 'pointer-events-none'}`} onClick={() => sendMessage()}>
+						<Input placeholder='Type a message...' value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => {         if (e.key === 'Enter') {           sendMessage(messages.members[0]);       }       }} className='w-[100%]' inputClassName='p-4 border-0 shadow-md rounded-full bg-light focus:ring-0 focus:border-0 outline-none w-[99%]' />
+						<div className={`ml-4 p-2 cursor-pointer bg-light rounded-full ${(!message && !file) && 'pointer-events-none'}`} onClick={() => sendMessage(messages.members[0])}>
 							<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-send" width="30" height="30" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none" stroke-linecap="round" stroke-linejoin="round">
 								<path stroke="none" d="M0 0h24v24H0z" fill="none" />
 								<line x1="10" y1="14" x2="21" y2="3" />
@@ -1122,8 +1123,8 @@ useEffect(() => {
 					</div>
 				}
 			</div>
-				{messages?.members? (
-					<ConversationDetails members={messages.members} nameConversation={messages.nameConversation} description={messages.discription} isGroup={messages.isGroup} avatar={currentConversation.avatar} messages={messages.messages} admins={currentConversation.admins}
+				{!!currentConversation ? (
+					<ConversationDetails members={messages.members} nameConversation={messages.nameConversation} description={messages.discription} isGroup={messages.isGroup} avatar={messages.avatar} messages={messages.messages} admins={currentConversation?.admins}
 					handleLeaveGroup={handleLeaveGroup} handleRemoveMember={handleRemoveMember} handleDeleteGroup={handleDeleteGroup} handleEditGroup={handleEditGroup} handleAssignAdmin={handleAssignAdmin}
 					isAdmin={isAdmin} addMembersHook={[showAddMembersModal, setShowAddMembersModal]} editGroupNameHook={[editGroupName, setEditGroupName]} editGroupAvatarHook={[editGroupAvatar, setEditGroupAvatar]} currentUser={user} />
 				) : (
@@ -1135,7 +1136,7 @@ useEffect(() => {
 								users.map(({ userId, user }) => {
 									return (
 										<div className='flex items-center py-8 border-b border-b-gray-300'>
-											<div className='cursor-pointer flex items-center' onClick={() => fetchMessages('new', user)}>
+											<div className='cursor-pointer flex items-center' onClick={() => fetchMessages('new', [user], user.fullName, user.email, false, user.profile_picture)}>
 												<div><img src={userDefault} className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary" /></div>
 												<div className='ml-6'>
 													<h3 className='text-lg font-semibold'>{user?.fullName}</h3>

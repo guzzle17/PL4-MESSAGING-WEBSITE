@@ -3,28 +3,7 @@ import { json } from 'react-router'
 
 const ConversationMediaFilesView = ({selection, messages}) => {
     const [selectedTab, setSelectedTab] = useState('Media')
-    let fileSize = ""
-    const [fileUrl, setFileUrl] = useState("")
     const isVideo =['.mpg', '.mp2', '.mpeg', '.mpe', '.mpv', '.mp4']
-
-    useEffect(() => {
-        const getFileSize = async (url) => {
-            try {
-                const res = await fetch(`http://localhost:8000/get-file-size?url=${url}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                const data = await res.json()
-                fileSize = data.fileSize
-                
-            } catch (err) {
-                throw new Error(err);
-            }
-        }
-        getFileSize(fileUrl)
-    }, [fileUrl])
 
     const handleTabChange = (id) => {
         if (id !== null){
@@ -76,7 +55,7 @@ const ConversationMediaFilesView = ({selection, messages}) => {
             {messages.map(({ type, file_url }) => (
                 <>
                 {(type === 'file') && (!/\.(mp4|webm|ogg)$/i.test(file_url)) && (
-                    <button onClick={() => window.open(`http://localhost:8000${file_url}`)} onMouseOver={() => setFileUrl(file_url)}>
+                    <button onClick={() => window.open(`http://localhost:8000${file_url}`)}>
                         <div class="flex items-center justify-between ml-2 mt-2 mr-2">
                             <div class="flex items-center gap-2">
                                 <div class="flex items-center justify-center mr-auto ml-auto w-9 h-9 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-600">
@@ -84,7 +63,6 @@ const ConversationMediaFilesView = ({selection, messages}) => {
                                 </div>
                                 <div class="text-left text-sm dark:text-white">
                                     <div class="font-medium">{file_url.substring(9)}</div>
-                                    <div class="text-gray-500 dark:text-gray-400">{fileSize}</div>
                                 </div>
                             </div>
                         </div>
