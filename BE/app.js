@@ -167,7 +167,7 @@ app.post('/api/login', async (req, res, next) => {
 })
 
 
-
+//
 app.post('/api/conversation', async (req, res) => {
     try {
         const { senderId, receiverId, isGroup, groupName } = req.body;
@@ -202,7 +202,7 @@ app.post('/api/conversation', async (req, res) => {
 
 
 
-
+//
 app.get('/api/conversations/:userId', async (req, res) => {
     try {
         const userId = req.params.userId;
@@ -400,7 +400,7 @@ app.get('/api/users/:userId', async (req, res) => {
     }
 })
 
-app.post('/api/updateProfile', async (req, res) => {
+app.post('/api/users/updateProfile', async (req, res) => {
     try {
         const formData = req.body;
         if (formData.oldPassword !== ""){
@@ -438,7 +438,7 @@ app.post('/api/updateProfile', async (req, res) => {
 })
 
 
-
+//
 app.post('/api/conversation/editinformation', upload.single('file'), async (req, res) => {
     try {
         const { conversationId, groupName } = req.body;
@@ -696,15 +696,6 @@ app.post('/api/conversation/:conversationId/assignAdmin', async (req, res) => {
     }
 });
 
-app.get('/get-file-size', async (req, res) => {
-    const fileUrl = req.query.url;
-    fs.stat(path.join(__dirname, fileUrl), (err, stats) => {
-        if (err) {
-            return res.status(500).json({ error: 'Failed to fetch file size' });
-        }
-        res.json({ fileSize: stats.size.toString() });
-    });
-});
 
 app.listen(port, () => {
     console.log('listening on port ' + port);

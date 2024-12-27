@@ -19,7 +19,7 @@ const Form = ({ isSignInPage = true }) => {
         console.log('data >>', data);
     
         try {
-            const res = await fetch(`http://localhost:8000/api/${isSignInPage ? 'login' : 'register'}`, {
+            const res = await fetch(`http://localhost:8000/api/auth/${isSignInPage ? 'login' : 'register'}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

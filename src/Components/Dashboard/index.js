@@ -505,7 +505,7 @@ useEffect(() => {
 		};
 		const serializedBody = JSON.stringify(formData);
 
-		const res = await fetch('http://localhost:8000/api/updateProfile', {
+		const res = await fetch('http://localhost:8000/api/users/updateProfile', {
 			method: "POST",
 			headers: {
 				'Content-Type': 'application/json',
@@ -541,7 +541,7 @@ useEffect(() => {
 	  };
 
 	useEffect(() => {
-		setSocket(io('http://localhost:8080'))
+		setSocket(io('http://localhost:8000'))
 	}, [])
 
 	useEffect(() => {

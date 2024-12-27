@@ -7,24 +7,7 @@ const ConversationMediaFilesView = ({selection, messages}) => {
     const [fileUrl, setFileUrl] = useState("")
     const isVideo =['.mpg', '.mp2', '.mpeg', '.mpe', '.mpv', '.mp4']
 
-    useEffect(() => {
-        const getFileSize = async (url) => {
-            try {
-                const res = await fetch(`http://localhost:8000/get-file-size?url=${url}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                const data = await res.json()
-                fileSize = data.fileSize
-                
-            } catch (err) {
-                throw new Error(err);
-            }
-        }
-        getFileSize(fileUrl)
-    }, [fileUrl])
+    
 
     const handleTabChange = (id) => {
         if (id !== null){
