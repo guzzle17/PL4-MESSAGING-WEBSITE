@@ -13,6 +13,7 @@ export default function ChatWindow({
   previewUrl,
   setPreviewUrl,
   messageRef,
+  user
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState('');
@@ -81,92 +82,62 @@ export default function ChatWindow({
 
       {/* Danh sách tin nhắn */}
       <div className="h-[75%] w-full overflow-auto shadow-sm">
-        <div className="p-14">
-          {messages?.messages?.length > 0 ? (
-            messages.messages.map((msgItem, index) => {
-              const { message: text, type, file_url, user: msgUser = {} } = msgItem;
+        <div className='p-14'>
+						{
+							messages?.messages?.length > 0 ? (
+								messages.messages.map(({ message, type, file_url, user: { id } = {} }, index) => (
+									<div>
+										{messages.isGroup && id !== user?.id && (
+											<div className="ml-16 text-smtext-gray-700 mb-1 italic">{user.fullName}</div>
+									  	)}
+										<div className="flex items-start">
 
-              // Hiển thị tên người gửi (nếu group và khác user hiện tại)
-              const isMe = msgUser.id === undefined; // fallback, tuỳ logic của bạn
-              const isCurrentUser = msgUser.id === undefined; // tuỳ logic
-              // Hoặc:
-              // const isCurrentUser = (msgUser.id === user?.id);
-
-              return (
-                <div key={index}>
-                  {/* Tên sender (nếu group) */}
-                  {messages.isGroup && msgUser.id !== undefined && (
-                    <div className="ml-16 text-sm text-gray-700 mb-1 italic">{msgUser.fullName}</div>
-                  )}
-
-                  <div className="flex items-start">
-                    {/* Avatar sender (nếu không phải mình) */}
-                    {msgUser.id !== undefined && msgUser.id !== null && (
-                      <img
-                        src={msgUser.avatar ? `http://localhost:8000${msgUser.avatar}` : userDefault}
-                        className="w-[45px] h-[45px] rounded-full p-[2px] border border-primary mr-3"
-                        alt="User Avatar"
-                      />
-                    )}
-
-                    <div
-                      className={`max-w-[40%] rounded-b-xl p-1 mb-6 w-fit break-words ${
-                        msgUser.id === undefined
-                          ? 'bg-primary text-white rounded-tl-xl ml-auto'
-                          : 'bg-secondary rounded-tr-xl'
-                      }`}
-                    >
-                      {text && <p className="ml-4 mr-4 mt-2 mb-2">{text}</p>}
-                      {type === 'image' && (
-                        <img
-                          src={`http://localhost:8000${file_url}`}
-                          alt="Image"
-                          className="max-w-full rounded cursor-pointer"
-                          onClick={() => openModal(`http://localhost:8000${file_url}`)}
-                        />
-                      )}
-                      {type === 'file' && (
-                        <a
-                          href={`http://localhost:8000${file_url}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-white-600 underline"
-                        >
-                          {file_url.substring(9)}
-                        </a>
-                      )}
-                      <div ref={messageRef}></div>
-
-                      {/* Modal zoom ảnh */}
-                      {isModalOpen && (
-                        <div
-                          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
-                          onClick={closeModal}
-                        >
-                          <button
-                            className="absolute top-5 right-5 text-white text-3xl cursor-pointer"
-                            onClick={closeModal}
-                          >
-                            &times;
-                          </button>
-                          <img
-                            src={currentImage}
-                            alt="Zoomed"
-                            className="max-w-[90%] max-h-[90%] rounded-lg shadow-lg"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="text-center text-lg font-semibold mt-24">
-              No Messages or No Conversation Selected
-            </div>
-          )}
-        </div>
+											{ id !== user?.id && <img
+												src={user.avatar ? `http://localhost:8000${user.avatar}` : userDefault}
+												className="w-[45px] h-[45px] rounded-full p-[2px] border border-primary mr-3"
+												alt="User Avatar"
+												/> 
+											}
+											<div key={index} className={`max-w-[40%] rounded-b-xl p-1 mb-6 w-fit break-words ${id === user?.id ? 'bg-primary text-white rounded-tl-xl ml-auto' : 'bg-secondary rounded-tr-xl'}`}>
+												
+												{message && <p className = {`ml-4 mr-4 mt-2 mb-2`}>{message}</p>}
+												{type === 'image' && <img src={`http://localhost:8000${file_url}`} alt="Image" className="max-w-full rounded cursor-pointer" onClick={() => openModal(`http://localhost:8000${file_url}`)} />}
+												{type === 'file' && (
+													<a href={`http://localhost:8000${file_url}`} target="_blank" rel="noopener noreferrer" className="text-white-600 underline">
+														{file_url.substring(9)}
+													</a>
+												)}
+												{<div ref={messageRef}></div>}
+												
+												{isModalOpen && (
+													<div
+														className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 transition-opacity duration-300"
+														onClick={closeModal}
+													>
+														{/* Nút đóng */}
+														<button
+															className="absolute top-5 right-5 text-white text-3xl cursor-pointer"
+															onClick={closeModal}
+														>
+															&times;
+														</button>
+														{/* Ảnh phóng to */}
+														<img
+															src={currentImage}
+															alt="Zoomed"
+															className="max-w-[90%] max-h-[90%] rounded-lg shadow-lg"
+														/>
+													</div>
+												)}
+											</div>
+										</div>
+									</div>
+								))
+							) : (
+								<div className='text-center text-lg font-semibold mt-24'>No Messages or No Conversation Selected</div>
+							)
+						}
+					</div>
       </div>
 
       {/* Ô soạn tin nhắn */}

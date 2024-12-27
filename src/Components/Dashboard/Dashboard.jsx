@@ -631,6 +631,7 @@ export default function Dashboard() {
           handleLogout={handleLogout}
           setShowCreateGroupModal={setShowCreateGroupModal}
           setShowUpdateProfileModal={setShowUpdateProfileModal}
+          findConversation={findConversation}
         />
 
         {/* --------- KHUNG CHAT Ở GIỮA --------- */}
@@ -645,6 +646,7 @@ export default function Dashboard() {
           previewUrl={previewUrl}
           setPreviewUrl={setPreviewUrl}
           messageRef={messageRef}
+          user={user}
         />
 
         {/* --------- CỘT PHẢI: RIGHT PANEL --------- */}
