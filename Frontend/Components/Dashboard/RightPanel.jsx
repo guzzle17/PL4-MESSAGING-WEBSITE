@@ -28,6 +28,7 @@ export default function RightPanel({
   handleAssignAdmin,
 
   user,
+  findConversation
 }) {
   return (
     <div className="w-[25%] h-screen bg-light px-8 py-16 overflow-auto">
@@ -51,6 +52,7 @@ export default function RightPanel({
           editGroupNameHook={[editGroupName, setEditGroupName]}
           editGroupAvatarHook={[editGroupAvatar, setEditGroupAvatar]}
           currentUser={user}
+          findConversation={findConversation}
         />
       ) : (
         // Hiển thị danh sách "People" (nếu chưa chọn conversation)

@@ -241,6 +241,15 @@ export default function Dashboard() {
 
   // ------------------ HÀM XỬ LÝ ------------------
 
+  // Hàm tìm hội thoại cá nhân
+  const findConversation = async (members, nameConversation, discription, isGroup, avatar) => {
+    const conversation = conversations.find(conversation => {
+      if (conversation.nameConversation === nameConversation && !conversation.isGroup && conversation.members[0]._id === members[0]._id)
+        return conversation
+    })
+    fetchMessages(conversation.conversationId, members, nameConversation, discription, isGroup, avatar)
+	}
+
   // Hàm load tin nhắn một conversation
   const fetchMessages = async (
     conversationId,
@@ -252,7 +261,7 @@ export default function Dashboard() {
   ) => {
     try {
       const res = await fetch(
-        `http://localhost:8000/api/message/${conversationId}?senderId=${user?.id}`,
+        `http://localhost:8000/api/message/${conversationId}?senderId=${user?.id}&receiverId=${members[0]._id}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },

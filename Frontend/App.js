@@ -1,9 +1,6 @@
 import Form from './Pages/Login&SignUp';
 import './App.css';
 import { React, useState } from "react";
-import SearchBar from './Components/SearchBar';
-import DropDownMenu from './Components/DropDownMenu';
-import MessageView from './Components/MessageView';
 import Dashboard from "./Components/Dashboard/Dashboard";
 import {Navigate, Route, Routes} from 'react-router-dom';
 
@@ -26,15 +23,7 @@ function App() {
       }/>
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <div className="App">
-            <div className="Contacts">
-              <DropDownMenu />
-              <SearchBar />
-            </div>
-            <div className="MessageArea">
-              <MessageView />
-            </div>
-          </div>
+          <Dashboard />
         </ProtectedRoute>
       } />
       <Route path="/users/sign_in" element={<Form isSignInPage={true}/>} />
