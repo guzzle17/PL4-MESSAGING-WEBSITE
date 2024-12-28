@@ -81,7 +81,7 @@ export default function Sidebar({
         <div className="text-primary text-lg">Messages</div>
         <div>
           {/* Nếu đang search => hiển thị user search. Ngược lại => hiển thị conversations */}
-          {searchQuery ? ((
+          {searchQuery ? (
             filteredUsers.length > 0 ? (
               filteredUsers.map((searchUser, idx) => (
                 <div className="flex items-center py-8 border-b border-b-gray-300" key={idx}>
@@ -112,58 +112,9 @@ export default function Sidebar({
                 </div>
               ))
             ) : (
-              <div className="text-center text-lg font-semibold mt-24">No Conversations</div>
+              <></>
             )
-          ) && (
-            filteredGroups.length > 0 ? (
-              filteredGroups.map(group => {
-                const { conversationId, isGroup, nameConversation, discription, members, avatar, unread } =
-                group;
-                
-                return (
-                  <div
-                    key={conversationId}
-                    className="flex items-center py-8 border-b border-b-gray-300"
-                  >
-                    <div
-                      className="cursor-pointer flex items-center"
-                      onClick={() =>
-                        fetchMessages(
-                          conversationId,
-                          members,
-                          nameConversation,
-                          discription,
-                          isGroup,
-                          avatar
-                        )
-                      }
-                    >
-                      {avatar ? (
-                        <img
-                          src={`http://localhost:8000${avatar}`}
-                          className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
-                          alt="Group Avatar"
-                        />
-                      ) : (
-                        <div className="w-[60px] h-[60px] bg-primary rounded-full flex items-center justify-center text-white font-bold">
-                          {nameConversation?.charAt(0)}
-                        </div>
-                      )}
-                      <div className="ml-6">
-                        <h3 className="text-lg font-semibold">{nameConversation}</h3>
-                        <p className="text-sm font-light text-gray-600">{discription}</p>
-                        {unread && (
-                          <span className="ml-auto bg-red-500 text-white rounded-full h-4 w-4 flex items-center justify-center text-xs">
-                            •
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })
-            ) : (<></>)
-          )) : conversations.length > 0 ? (
+          ) : conversations.length > 0 ? (
             conversations.map((conv) => {
               const { conversationId, isGroup, nameConversation, discription, members, avatar, unread } =
                 conv;
@@ -252,6 +203,56 @@ export default function Sidebar({
           ) : (
             <div className="text-center text-lg font-semibold mt-24">No Conversations</div>
           )}
+          {searchQuery ? (
+            filteredGroups.length > 0 ? (
+              filteredGroups.map(group => {
+                const { conversationId, isGroup, nameConversation, discription, members, avatar, unread } =
+                group;
+                
+                return (
+                  <div
+                    key={conversationId}
+                    className="flex items-center py-8 border-b border-b-gray-300"
+                  >
+                    <div
+                      className="cursor-pointer flex items-center"
+                      onClick={() =>
+                        fetchMessages(
+                          conversationId,
+                          members,
+                          nameConversation,
+                          discription,
+                          isGroup,
+                          avatar
+                        )
+                      }
+                    >
+                      {avatar ? (
+                        <img
+                          src={`http://localhost:8000${avatar}`}
+                          className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
+                          alt="Group Avatar"
+                        />
+                      ) : (
+                        <div className="w-[60px] h-[60px] bg-primary rounded-full flex items-center justify-center text-white font-bold">
+                          {nameConversation?.charAt(0)}
+                        </div>
+                      )}
+                      <div className="ml-6">
+                        <h3 className="text-lg font-semibold">{nameConversation}</h3>
+                        <p className="text-sm font-light text-gray-600">{discription}</p>
+                        {unread && (
+                          <span className="ml-auto bg-red-500 text-white rounded-full h-4 w-4 flex items-center justify-center text-xs">
+                            •
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            ) : (<></>)
+          ) : (<></>)}
         </div>
       </div>
     </div>

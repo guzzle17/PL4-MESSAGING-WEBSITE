@@ -230,7 +230,8 @@ export default function Dashboard() {
       const filtered = conversations.filter((c) =>
         c.nameConversation.toLowerCase().includes(searchQuery.toLowerCase())
       )
-      const groupList = filtered.map(i => i);
+      const filteredGroup = filtered.filter(c => c.isGroup)
+      const groupList = filteredGroup.map(i => i);
       setFilteredGroups(groupList)
     }
     else {
