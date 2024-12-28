@@ -20,7 +20,13 @@ export function ViewProfileModal({ user, modalHook }) {
                     <div class="col-span-2">
                         <label for="description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Avatar</label>
                         <div class="flex justify-center">
-                            <img class="w-36 h-36 rounded-full flex" id="profileAvatar" />
+                            {!!(user.profile_picture) ? (
+                            <img class='w-36 h-36 rounded-full mt-7 justify-self-center' src={`http://localhost:8000${user.profile_picture}`} />
+                            ) : (
+                            <div class="flex items-center justify-center mr-auto ml-auto mt-7 w-36 h-36 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-600">
+                                <svg class="w-36 h-36 text-gray-400 -left-1" fill="currentColor" viewBox="0 0 30 24" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M 15 13.5 a 4.5 4.5 90 1 0 0 -9 a 4.5 4.5 90 0 0 0 9 z m -10.5 13.5 a 10.5 10.5 90 1 1 21 0 H 4.5 z" clip-rule="evenodd"></path></svg>
+                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
