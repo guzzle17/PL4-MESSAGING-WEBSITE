@@ -68,11 +68,19 @@ export default function RightPanel({
                       onClick={() => findConversation([user], user.fullName, user.email, false, user.profile_picture)}
                     >
                       <div>
-                        <img
+                        {user.profile_picture ? (
+                          <img
+                          src={`http://localhost:8000${user.profile_picture}`}
+                          className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
+                          alt="user avatar"
+                          />
+                        ) : (
+                          <img
                           src={userDefault}
                           className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
                           alt="user default"
-                        />
+                          />
+                        )}
                       </div>
                       <div className="ml-6">
                         <h3 className="text-lg font-semibold">{user?.fullName}</h3>

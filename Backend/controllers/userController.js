@@ -6,7 +6,7 @@ exports.getUsersExceptCurrent = async (req, res) => {
     const userId = req.params.userId;
     const users = await Users.find({ _id: { $ne: userId } });
     const usersData = Promise.all(users.map(async (user) => {
-        return { user: { email: user.email, fullName: user.fullName, receiverId: user._id } }
+        return { user: { email: user.email, fullName: user.fullName, receiverId: user._id, profile_picture: user.profile_picture } }
     }))
     res.status(200).json(await usersData);
   } catch (error) {

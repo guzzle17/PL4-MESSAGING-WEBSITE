@@ -76,7 +76,7 @@ exports.getListConversations = async (req, res) => {
                 } else {
                     // Nếu là hội thoại cá nhân, tìm người nhận
                     const receiverId = conversation.members.find((member) => member.toString() !== userId);
-                    const user = await Users.findById(receiverId, 'fullName email');
+                    const user = await Users.findById(receiverId, 'fullName email profile_picture');
                     return {
                         isGroup: false,
                         // user: {

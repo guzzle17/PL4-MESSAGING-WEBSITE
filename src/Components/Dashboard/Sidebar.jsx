@@ -90,11 +90,19 @@ export default function Sidebar({
                     onClick={() => findConversation([searchUser], searchUser.fullName, searchUser.email, false, searchUser.profile_picture)}
                   >
                     <div>
-                      <img
+                      {searchUser.profile_picture ? (
+                        <img
+                        src={`http://localhost:8000${searchUser.profile_picture}`}
+                        className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
+                        alt="user avatar"
+                        />
+                      ) : (
+                        <img
                         src={userDefault}
                         className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
                         alt="user default"
-                      />
+                        />
+                      )}
                     </div>
                     <div className="ml-6">
                       <h3 className="text-lg font-semibold">{searchUser?.fullName}</h3>
@@ -214,13 +222,19 @@ export default function Sidebar({
                         )
                       }
                     >
-                      <img
-                        src={
-                          avatar ? `http://localhost:8000${avatar}` : userDefault
-                        }
+                      {!!avatar ? (
+                        <img
+                        src={`http://localhost:8000${avatar}`}
                         className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
-                        alt="User Avatar"
-                      />
+                        alt="user avatar"
+                        />
+                      ) : (
+                        <img
+                        src={userDefault}
+                        className="w-[60px] h-[60px] rounded-full p-[2px] border border-primary"
+                        alt="user default"
+                        />
+                      )}
                       <div className="ml-6">
                         <h3 className="text-lg font-semibold">{nameConversation}</h3>
                         <p className="text-sm font-light text-gray-600">{discription}</p>
