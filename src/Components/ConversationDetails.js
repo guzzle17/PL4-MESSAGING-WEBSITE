@@ -1,5 +1,5 @@
 import { Dropdown, Modal } from "flowbite-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ViewProfileModal } from "./ViewProfileModal";
 import { LuMessageCircle } from "react-icons/lu";
 import { CgProfile } from "react-icons/cg";
@@ -20,7 +20,16 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
     const [showAddMembersModal, setShowAddMembersModal] = addMembersHook
     const [editGroupAvatar, setEditGroupAvatar] = editGroupAvatarHook
     const [editGroupName, setEditGroupName] = editGroupNameHook
+    const [previewImage, setPreviewImage] = useState(null); // Quản lý ảnh xem trước
+    const fileInputRef = useRef(null); // Tham chiếu đến input file
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+        setPreviewImage(URL.createObjectURL(file)); // Cập nhật ảnh xem trước
+        setEditGroupAvatar(file)
+        }
+    };
     return (
     <>
     {(!isGroup) ? (
@@ -142,31 +151,67 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
                     </svg>
                     Change picture
                     </button>
-                    <Modal show={openEditGroupAvatarModal} onClose={() => setOpenEditGroupAvatarModal(false)}>
-                        <Modal.Header>Change avatar</Modal.Header>
-                        <Modal.Body>
-                        <div class="grid gap-4 grid-cols-2">
-                            <div class="col-span-2 mb-3">
-                                <label for="updateGroupAvatar" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Avatar</label>
-                                <div class="flex justify-center">
-                                    {!!(avatar) ? (
-                                    <img class='w-36 h-36 rounded-full mt-7 justify-self-center' src={`http://localhost:8000${avatar}`} />
-                                    ) : (
-                                    <div class="flex items-center justify-center mr-auto ml-auto mt-7 w-36 h-36 overflow-hidden bg-primary rounded-full dark:bg-gray-600">
-                                        <span class="font-medium text-3xl text-white dark:text-gray-300">{nameConversation.charAt()}</span>
-                                    </div>
-                                    )}
-                                    <div class="ml-10 self-center">
-                                        <input onChange={(e) => {document.getElementById('updateGroupAvatar').src = URL.createObjectURL(e.target.files[0]); setEditGroupAvatar(e.target.files[0]);}} class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="changeImageInput" type="file"  accept="image/*" />
-                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-300" id="changeImageInputHelp">SVG, PNG, JPG or GIF (MAX. 800x400px).</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <button onClick={() => setOpenEditGroupAvatarModal(false)} class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Cancel</button>
-                            <button onClick={handleEditGroup} class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Save</button>
-                        </div>
-                        </Modal.Body>
-                    </Modal>
+                    <Modal
+      show={openEditGroupAvatarModal}
+      onClose={() => setOpenEditGroupAvatarModal(false)}
+    >
+      <Modal.Header>Change Avatar</Modal.Header>
+      <Modal.Body>
+        <div className="grid gap-4 grid-cols-2">
+          <div className="col-span-2 mb-3">
+            <label
+              htmlFor="updateGroupAvatar"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              Avatar
+            </label>
+            <div className="flex justify-center">
+              {previewImage || avatar ? (
+                <img
+                  className="w-36 h-36 rounded-full mt-7 justify-self-center"
+                  src={previewImage || `http://localhost:8000${avatar}`}
+                  alt="Group Avatar"
+                />
+              ) : (
+                <div className="flex items-center justify-center mr-auto ml-auto mt-7 w-36 h-36 overflow-hidden bg-primary rounded-full dark:bg-gray-600">
+                  <span className="font-medium text-3xl text-white dark:text-gray-300">
+                    {nameConversation.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div className="ml-10 self-center">
+                <input
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+                  id="changeImageInput"
+                  type="file"
+                  accept="image/*"
+                />
+                <p
+                  className="mt-1 text-sm text-gray-500 dark:text-gray-300"
+                  id="changeImageInputHelp"
+                >
+                  SVG, PNG, JPG or GIF (MAX. 800x400px).
+                </p>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setOpenEditGroupAvatarModal(false)}
+            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleEditGroup}
+            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+          >
+            Save
+          </button>
+        </div>
+      </Modal.Body>
+    </Modal>
 
                     {isAdmin && (
                     <button onClick={handleDeleteGroup} class="w-full bg-transparent hover:bg-gray-300 focus:outline-none font-medium rounded-lg text-sm gap-2 px-2 py-2.5 text-left inline-flex items-center dark:text-white" type="button">

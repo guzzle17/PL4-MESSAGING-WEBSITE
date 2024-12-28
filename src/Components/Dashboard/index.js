@@ -28,40 +28,42 @@ const Dashboard = () => {
 	const [editGroupAvatar, setEditGroupAvatar] = useState(null);
 
 	const handleEditGroup = async () => {
-		if (!currentConversation) return;
-
-		const formData = new FormData();
-		formData.append('senderId', user.id);
-		if (editGroupName) formData.append('groupName', editGroupName);
-		if (editGroupAvatar) formData.append('avatar', editGroupAvatar);
-
-		try {
-			const response = await fetch(`http://localhost:8000/api/conversation/${currentConversation.conversationId}`, {
-				method: 'PUT',
-				body: formData,
-			});
-
-			if (response.ok) {
-				const updatedConversation = await response.json();
-				// Update conversations state
-				setConversations(conversations.map(conv => 
-					conv.conversationId === updatedConversation.conversationId ? updatedConversation : conv
-				));
-				messages.avatar = updatedConversation.avatar;
-				messages.nameConversation = updatedConversation.nameConversation;
-				alert('Group information updated successfully!');
-				setShowEditGroupModal(false);
-			} else {
-				const error = await response.json();
-				console.error('Failed to edit group:', error.message);
-				alert('Failed to update group information.');
+		console.log("????")
+			if (!currentConversation) return;
+	
+			const formData = new FormData();
+			formData.append('senderId', user.id);
+			if (editGroupName) formData.append('groupName', editGroupName);
+		console.log("editGroupAvatar", editGroupAvatar);
+			if (editGroupAvatar) formData.append('avatar', editGroupAvatar);
+	
+			try {
+				const response = await fetch(`http://localhost:8000/api/conversation/${currentConversation.conversationId}`, {
+					method: 'PUT',
+					body: formData,
+				});
+	
+				if (response.ok) {
+					const updatedConversation = await response.json();
+					// Update conversations state
+					setConversations(conversations.map(conv => 
+						conv.conversationId === updatedConversation.conversationId ? updatedConversation : conv
+					));
+					messages.avatar = updatedConversation.avatar;
+					messages.nameConversation = updatedConversation.nameConversation;
+					alert('Group information updated successfully!');
+					// setShowEditGroupModal(false);
+				} else {
+					const error = await response.json();
+					console.error('Failed to edit group:', error.message);
+					alert('Failed to update group information.');
+				}
+			} catch (err) {
+				console.error('Error editing group:', err);
+				alert('An error occurred while updating group information.');
 			}
-		} catch (err) {
-			console.error('Error editing group:', err);
-			alert('An error occurred while updating group information.');
-		}
-		
-	};
+			
+		};
 
 
 
