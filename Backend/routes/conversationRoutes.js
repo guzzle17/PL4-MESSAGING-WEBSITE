@@ -14,6 +14,7 @@ const upload = multer({ storage });
 
 const router = express.Router();
 
+router.post('/', conversationController.createGroup)
 router.put('/:conversationId', upload.single('avatar'), conversationController.updateGroupInformation);
 router.get('/:userId', conversationController.getListConversations);
 router.post('/:conversationId/leave', conversationController.leaveGroupConversations);

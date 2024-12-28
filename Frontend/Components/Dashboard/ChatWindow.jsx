@@ -103,7 +103,7 @@ export default function ChatWindow({
                     {/* Avatar sender (nếu không phải mình) */}
                     {msgUser.id !== undefined && msgUser.id !== null && (
                       <img
-                        src={msgUser.avatar ? `http://localhost:8000${msgUser.avatar}` : userDefault}
+                        src={msgUser.profile_picture ? `http://localhost:8000${msgUser.profile_picture}` : userDefault}
                         className="w-[45px] h-[45px] rounded-full p-[2px] border border-primary mr-3"
                         alt="User Avatar"
                       />

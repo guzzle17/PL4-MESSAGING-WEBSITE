@@ -67,6 +67,10 @@ export default function UpdateProfileModal({
   // Gửi form cập nhật
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    if (e.target.confirmOldPassword.value && !e.target.changePassword.value){
+      alert("Vui lòng nhập thêm mật khẩu mới!")
+      return
+    }
     const formData = new FormData()
     formData.append('email', e.target.email.value)
     formData.append('name', e.target.name.value)

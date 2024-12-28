@@ -85,15 +85,15 @@ export default function ChatWindow({
         <div className='p-14'>
 						{
 							messages?.messages?.length > 0 ? (
-								messages.messages.map(({ message, type, file_url, user: { id } = {} }, index) => (
+								messages.messages.map(({ message, type, file_url, user: { id, fullName, avatar } = {} }, index) => (
 									<div>
 										{messages.isGroup && id !== user?.id && (
-											<div className="ml-16 text-smtext-gray-700 mb-1 italic">{user.fullName}</div>
+											<div className="ml-16 text-smtext-gray-700 mb-1 italic">{fullName}</div>
 									  	)}
 										<div className="flex items-start">
 
 											{ id !== user?.id && <img
-												src={user.avatar ? `http://localhost:8000${user.avatar}` : userDefault}
+												src={avatar ? `http://localhost:8000${avatar}` : userDefault}
 												className="w-[45px] h-[45px] rounded-full p-[2px] border border-primary mr-3"
 												alt="User Avatar"
 												/> 

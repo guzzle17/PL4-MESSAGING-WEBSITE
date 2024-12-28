@@ -30,7 +30,7 @@ exports.login = async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: 'Invalid email or password' });
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || 'default_secret', { expiresIn: '1d' });
-    res.status(200).json({ user: { id: user._id, email: user.email, fullName: user.fullName }, token });
+    res.status(200).json({ user: { id: user._id, email: user.email, fullName: user.fullName, profile_picture: user.profile_picture }, token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Internal Server Error' });
