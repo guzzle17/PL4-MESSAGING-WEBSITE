@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
+import userDefault from '../../Assets/userDefault.png'
 
 export default function UpdateProfileModal({
   show,
@@ -66,19 +67,22 @@ export default function UpdateProfileModal({
   // Gửi form cập nhật
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    const formData = {
-      email: e.target.email.value,
-      name: e.target.name.value,
-      oldPassword: e.target.confirmOldPassword.value,
-      newPassword: e.target.changePassword.value,
-    };
-    const serializedBody = JSON.stringify(formData);
+    const formData = new FormData()
+    formData.append('email', e.target.email.value)
+    formData.append('name', e.target.name.value)
+    if (e.target.confirmOldPassword.value && e.target.changePassword.value){
+      formData.append('oldPassword', e.target.confirmOldPassword.value)
+      formData.append('newPassword', e.target.changePassword.value)
+    }
+    if (e.target.changeImageInput.files[0]){
+      formData.append('newProfile_picture', e.target.changeImageInput.files[0])
+    }
+    else formData.append('profile_picture', user.profile_picture)
 
     try {
       const res = await fetch('http://localhost:8000/api/users/updateProfile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: serializedBody,
+        method: 'PUT',
+        body: formData,
       });
       const resData = await res.json();
       if (resData.user) {
@@ -150,9 +154,13 @@ export default function UpdateProfileModal({
 									<div class="col-span-2">
 										<label for="description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Avatar</label>
 										<div class="flex justify-center">
-											<img class="w-36 h-36 rounded-full flex" id="updateProfileAvatar" src={placeholder_avatar} />
+                      {!!(user.profile_picture) ? (
+                      <img id="updateProfileAvatar" class='w-36 h-36 rounded-full mt-7 justify-self-center' src={`http://localhost:8000${user.profile_picture}`} />
+                      ) : (
+                      <img id="updateProfileAvatar" class='w-36 h-36 rounded-full mt-7 justify-self-center' src={userDefault} />
+                      )}
 											<div class="ml-10 self-center">
-												<input class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" aria-describedby="changeImageInputHelp" id="changeImageInput" type="file"  accept="image/*" onChange={handleChooseUpdateAvatar} />
+												<input class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" name="changeImageInput" id="changeImageInput" type="file"  accept="image/*" onChange={handleChooseUpdateAvatar} />
 												<p class="mt-1 text-sm text-gray-500 dark:text-gray-300" id="changeImageInputHelp">SVG, PNG, JPG or GIF (MAX. 800x400px).</p>
 											</div>
 											{/*<button type="button" class="text-white flex self-center max-h-max items-center ml-10 bg-blue-500 hover:bg-cyan-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-cyan-400 dark:hover:bg-cyan-700 dark:focus:ring-blue-800" onClick={null}>

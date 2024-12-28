@@ -1,4 +1,5 @@
 const Users = require('../models/users');
+const bcrypt = require('bcrypt')
 
 exports.getUsersExceptCurrent = async (req, res) => {
   try {
@@ -15,17 +16,23 @@ exports.getUsersExceptCurrent = async (req, res) => {
 
 exports.updateUserProfile = async (req, res) => {
   try {
-    const formData = req.body;
-    if (formData.oldPassword !== ""){
-        const tempUser = await Users.findOne({ email: formData.email });
-        const validatePassword = await bcryptjs.compare(formData.oldPassword, tempUser.password);
+    const { email, name, oldPassword, newPassword, profile_picture } = req.body;
+    console.log(email)
+    const newProfile_picture = req.file;
+    let avatarUrl = profile_picture
+    if (req.file)
+        avatarUrl = `/uploads/${newProfile_picture.filename}`
+    console.log(avatarUrl)
+    if (oldPassword){
+        const tempUser = await Users.findOne({ email: email });
+        const validatePassword = await bcrypt.compare(oldPassword, tempUser.password);
         if (!validatePassword){
             res.status(400).send('User email or password is incorrect');
             return;
         }
         else {
-            const hashedPassword = await bcryptjs.hash(formData.newPassword, 10);
-            await Users.updateOne({ email: formData.email }, { $set: { fullName: formData.name, password: hashedPassword } })
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            await Users.updateOne({ email: email }, { $set: { fullName: name, password: hashedPassword, profile_picture: avatarUrl } })
             .catch((err) => {
                 res.status(500).json({
                     success: false,
@@ -35,7 +42,7 @@ exports.updateUserProfile = async (req, res) => {
         }
     }
     else{
-        await Users.updateOne({ email: formData.email }, { $set: { fullName: formData.name } })
+        await Users.updateOne({ email: email }, { $set: { fullName: name, profile_picture: avatarUrl } })
         .catch((err) => {
             res.status(500).json({
                 success: false,
@@ -43,8 +50,8 @@ exports.updateUserProfile = async (req, res) => {
             });
         });
     }
-    const user = await Users.findOne({ email: formData.email });
-    return res.status(200).json({ user: { id: user._id, email: user.email, fullName: user.fullName }})
+    const user = await Users.findOne({ email: email });
+    return res.status(200).json({ user: { id: user._id, email: user.email, fullName: user.fullName, profile_picture: user.profile_picture }})
 } catch (error) {
     console.log('Error', error)
 }

@@ -6,6 +6,7 @@ import { CgProfile } from "react-icons/cg";
 import { BsPersonFillDash, BsPersonFillGear } from "react-icons/bs";
 import ConversationMediaFilesView from "./ConversationMediaFilesView";
 import { SearchModal } from "./SearchModal";
+import userDefault from '../Assets/userDefault.png';
 
 const ConversationDetails = ({ members, nameConversation, description, isGroup, avatar, messages, admins, handleLeaveGroup, handleRemoveMember, handleDeleteGroup, handleEditGroup, handleAssignAdmin, isAdmin, addMembersHook, editGroupNameHook, editGroupAvatarHook, currentUser, findConversation }) => {
     const [customizeChatListOpen, setCustomizeChatListOpen] = useState(false)
@@ -150,11 +151,11 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
                                 <label for="updateGroupAvatar" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Avatar</label>
                                 <div class="flex justify-center">
                                     {!!(avatar) ? (
-                                    <img class='w-36 h-36 rounded-full mt-7 justify-self-center' src={`http://localhost:8000${avatar}`} />
+                                    <>
+                                    <img id="updateGroupAvatar" class='w-36 h-36 rounded-full mt-7 justify-self-center' src={`http://localhost:8000${avatar}`} />
+                                    </>
                                     ) : (
-                                    <div class="flex items-center justify-center mr-auto ml-auto mt-7 w-36 h-36 overflow-hidden bg-primary rounded-full dark:bg-gray-600">
-                                        <span class="font-medium text-3xl text-white dark:text-gray-300">{nameConversation.charAt()}</span>
-                                    </div>
+                                    <img id="updateGroupAvatar" class='w-36 h-36 rounded-full mt-7 justify-self-center' src={userDefault} />
                                     )}
                                     <div class="ml-10 self-center">
                                         <input onChange={(e) => {document.getElementById('updateGroupAvatar').src = URL.createObjectURL(e.target.files[0]); setEditGroupAvatar(e.target.files[0]);}} class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="changeImageInput" type="file"  accept="image/*" />
