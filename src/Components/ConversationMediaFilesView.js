@@ -59,7 +59,9 @@ const ConversationMediaFilesView = ({selection, messages}) => {
                         <div class="flex items-center justify-between ml-2 mt-2 mr-2">
                             <div class="flex items-center gap-2">
                                 <div class="flex items-center justify-center mr-auto ml-auto w-9 h-9 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-600">
-                                    <svg class="w-9 h-9 text-gray-400 -left-1" fill="currentColor" viewBox="0 0 30 24" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M 15 13.5 a 4.5 4.5 90 1 0 0 -9 a 4.5 4.5 90 0 0 0 9 z m -10.5 13.5 a 10.5 10.5 90 1 1 21 0 H 4.5 z" clip-rule="evenodd"></path></svg>
+                                    <svg class="w-9 h-9 bg-gray-300 rounded-full dark:bg-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 8 8">
+                                    <path d="M 4.3232 2 H 3 a 0.5 0.5 90 0 0 -0.5 0.5 v 3 a 0.5 0.5 90 0 0 0.5 0.5 h 2 a 0.5 0.5 90 0 0 0.5 -0.5 V 3.1768 A 0.25 0.25 90 0 0 5.4268 3 L 4.5 2.0732 A 0.25 0.25 90 0 0 4.3232 2 M 4.375 2.875 v -0.5 l 0.75 0.75 h -0.5 a 0.25 0.25 90 0 1 -0.25 -0.25 M 3.125 4.25 a 0.125 0.125 90 0 1 0 -0.25 h 1.75 a 0.125 0.125 90 0 1 0 0.25 z M 3 4.625 a 0.125 0.125 90 0 1 0.125 -0.125 h 1.75 a 0.125 0.125 90 0 1 0 0.25 h -1.75 a 0.125 0.125 90 0 1 -0.125 -0.125 m 0.125 0.625 a 0.125 0.125 90 0 1 0 -0.25 h 1 a 0.125 0.125 90 0 1 0 0.25 z"/>                    
+                                    </svg>
                                 </div>
                                 <div class="text-left text-sm dark:text-white">
                                     <div class="font-medium">{file_url.substring(9)}</div>
