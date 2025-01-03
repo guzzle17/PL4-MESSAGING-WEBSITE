@@ -38,7 +38,7 @@ exports.sendMessage = async (req, res) => {
           });
           await newMessage.save();
           await Conversations.findByIdAndUpdate(newConversation._id, { last_message: newMessage._id, updated_at: newMessage.created_at });
-          return res.status(200).json({ message: newMessage });
+          return res.status(200).json({conversationId: newConversation._id, message: newMessage });
         } 
         const newMessage = new Messages({
           conversationId,

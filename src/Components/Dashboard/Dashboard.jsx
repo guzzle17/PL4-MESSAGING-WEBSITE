@@ -333,6 +333,10 @@ export default function Dashboard() {
       const data = await res.json();
 
       if (res.ok) {
+        if (data.conversationId){
+          messages.conversationId = data.conversationId
+          currentConversation.conversationId = data.conversationId
+        }
         socket?.emit('sendMessage', {
           senderId: user?.id,
           members: messages?.members?.map((member) => member._id),
