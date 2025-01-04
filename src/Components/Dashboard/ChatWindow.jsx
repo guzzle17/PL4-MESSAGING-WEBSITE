@@ -158,12 +158,39 @@ export default function ChatWindow({
 											<div key={index} className={`max-w-[40%] rounded-b-xl p-1 mb-6 w-fit break-words ${id === user?.id ? 'bg-primary text-white rounded-tl-xl ml-auto' : 'bg-secondary rounded-tr-xl'}`}>
 												
 												{message && <p className = {`ml-4 mr-4 mt-2 mb-2`}>{message}</p>}
-												{type === 'image' && <img src={`http://localhost:8000${file_url}`} alt="Image" className="max-w-full rounded cursor-pointer" onClick={() => openModal(`http://localhost:8000${file_url}`)} />}
+												{/* {type === 'image' && <img src={`http://localhost:8000${file_url}`} alt="Image" className="max-w-full rounded cursor-pointer" onClick={() => openModal(`http://localhost:8000${file_url}`)} />}
 												{type === 'file' && (
 													<a href={`http://localhost:8000${file_url}`} target="_blank" rel="noopener noreferrer" className="text-white-600 underline">
 														{file_url.substring(9)}
 													</a>
-												)}
+												)} */}
+                        {type === 'image' && (
+                          <img
+                            src={`http://localhost:8000${file_url}`}
+                            alt="Image"
+                            className="max-w-full rounded cursor-pointer"
+                            onClick={() => openModal(`http://localhost:8000${file_url}`)}
+                          />
+                        )}
+                        {type === 'file' && file_url && (
+                          /\.(mp4|webm|ogg)$/i.test(file_url) ? (
+                            <video
+                              src={`http://localhost:8000${file_url}`}
+                              className="max-w-full rounded cursor-pointer"
+                              controls
+                            >
+                              Your browser does not support the video tag.
+                            </video>
+                          ) : (
+                            type === 'file' && (
+                              <a href={`http://localhost:8000${file_url}`} target="_blank" rel="noopener noreferrer" className="text-white-600 underline">
+                                {file_url.substring(9)}
+                              </a>
+                            )
+                          )
+                        )}
+
+
 												{<div ref={messageRef}></div>}
 												
 												{isModalOpen && (
@@ -265,32 +292,69 @@ export default function ChatWindow({
           {file && (
             <div className="mt-4 flex items-center">
               {previewUrl ? (
-                <div className="relative">
+                // <div className="relative">
+                //   <img
+                //     src={previewUrl}
+                //     alt="Selected"
+                //     className="w-32 h-32 object-cover rounded"
+                //   />
+                //   <button
+                //     onClick={() => {
+                //       setFile(null);
+                //       setPreviewUrl(null);
+                //     }}
+                //     className="absolute top-0 right-0 bg-gray-800 text-white rounded-full p-1"
+                //   >
+                //     &times;
+                //   </button>
+                // </div>
+                <div className='relative'>
+                {/\.(mp4|webm|ogg)$/i.test(file.name) ? ( // Kiểm tra định dạng video
+                  <video
+                    src={previewUrl}
+                    className='w-32 h-32 object-cover rounded'
+                    controls
+                    autoPlay
+                    loop
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
                   <img
                     src={previewUrl}
-                    alt="Selected"
-                    className="w-32 h-32 object-cover rounded"
+                    alt='Selected'
+                    className='w-32 h-32 object-cover rounded'
                   />
-                  <button
-                    onClick={() => {
-                      setFile(null);
-                      setPreviewUrl(null);
-                    }}
-                    className="absolute top-0 right-0 bg-gray-800 text-white rounded-full p-1"
-                  >
-                    &times;
-                  </button>
-                </div>
+                )}
+                <button
+                  onClick={() => {
+                    setFile(null);
+                    setPreviewUrl(null);
+                  }}
+                  className='absolute top-0 right-0 bg-gray-800 text-white rounded-full p-1'
+                >
+                  &times;
+                </button>
+              </div>
               ) : (
-                <div className="flex items-center">
-                  <span className="mr-2">{file.name}</span>
-                  <button
-                    onClick={() => setFile(null)}
-                    className="bg-gray-800 text-white rounded-full p-1"
-                  >
-                    &times;
-                  </button>
-                </div>
+                // <div className="flex items-center">
+                //   <span className="mr-2">{file.name}</span>
+                //   <button
+                //     onClick={() => setFile(null)}
+                //     className="bg-gray-800 text-white rounded-full p-1"
+                //   >
+                //     &times;
+                //   </button>
+                // </div>
+                <div className='flex items-center'>
+                <span className='mr-2'>{file.name}</span>
+                <button
+                  onClick={() => setFile(null)}
+                  className='bg-gray-800 text-white rounded-full p-1'
+                >
+                  &times;
+                </button>
+              </div>
               )}
             </div>
           )}
