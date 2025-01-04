@@ -365,17 +365,19 @@ export default function Dashboard() {
 
   // Xử lý chọn file (hình, pdf, ...)
   const handleFileSelect = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      if (selectedFile.type.startsWith('image/')) {
-        const url = URL.createObjectURL(selectedFile);
-        setPreviewUrl(url);
-      } else {
-        setPreviewUrl(null);
-      }
-    }
-  };
+		const selectedFile = e.target.files[0];
+		if (selectedFile) {
+			setFile(selectedFile);
+	
+			// Generate a preview URL if the file is an image or video
+			if (selectedFile.type.startsWith('image/') || selectedFile.type.startsWith('video/')) {
+				const url = URL.createObjectURL(selectedFile);
+				setPreviewUrl(url); // Tạo preview URL cho hình ảnh hoặc video
+			} else {
+				setPreviewUrl(null); // Không tạo preview cho file không phải hình ảnh/video
+			}
+		}
+	};
 
   // -------------- HÀM TẠO NHÓM ---------------
   const handleToggleMember = (member) => {
