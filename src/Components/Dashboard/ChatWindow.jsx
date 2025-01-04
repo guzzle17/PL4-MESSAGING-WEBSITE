@@ -75,7 +75,7 @@ export default function ChatWindow({
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       setFile(selectedFile);
-      if (selectedFile.type.startsWith('image/')) {
+      if (selectedFile.type.startsWith('image/') || selectedFile.type.startsWith('video/')) {
         const url = URL.createObjectURL(selectedFile);
         setPreviewUrl(url);
       } else {
