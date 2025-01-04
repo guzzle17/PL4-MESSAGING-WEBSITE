@@ -78,18 +78,19 @@ export default function Dashboard() {
 
     // Lắng nghe tin nhắn
     socket.on('getMessage', (data) => {
-      setMessages((prev) => ({
-        ...prev,
-        messages: [
-          ...(prev.messages || []),
-          {
-            user: data.user,
-            message: data.message,
-            type: data.type,
-            file_url: data.file_url,
-          },
-        ],
-      }));
+      if (data.conversationId === currentConversation.conversationId)
+        setMessages((prev) => ({
+          ...prev,
+          messages: [
+            ...(prev.messages || []),
+            {
+              user: data.user,
+              message: data.message,
+              type: data.type,
+              file_url: data.file_url,
+            },
+          ],
+        }));
     });
 
     // Lắng nghe khi có thành viên được thêm vào

@@ -29,6 +29,7 @@ export default function RightPanel({
 
   user,
   findConversation
+  
 }) {
   return (
     <div className="w-[25%] h-screen bg-light px-8 py-16 overflow-auto">

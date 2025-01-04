@@ -115,21 +115,24 @@ export default function ChatWindow({
                             onClick={() => openModal(`http://localhost:8000${file_url}`)}
                           />
                         )}
-                        {type === 'file' && /\.(mp4|webm|ogg)$/i.test(file_url) && (
-                          <video
-                            src={`http://localhost:8000${file_url}`}
-                            className="max-w-full rounded cursor-pointer"
-                            controls
-                          >
-                            Your browser does not support the video tag.
-                          </video>
-                        ) }
-                        {type === 'image' && <img src={`http://localhost:8000${file_url}`} alt="Image" className="max-w-full rounded cursor-pointer" onClick={() => openModal(`http://localhost:8000${file_url}`)} />}
-												{type === 'file' && (
-													<a href={`http://localhost:8000${file_url}`} target="_blank" rel="noopener noreferrer" className="text-white-600 underline">
-														{file_url.substring(9)}
-													</a>
-												)}
+                        {type === 'file' && file_url && (
+                          /\.(mp4|webm|ogg)$/i.test(file_url) ? (
+                            <video
+                              src={`http://localhost:8000${file_url}`}
+                              className="max-w-full rounded cursor-pointer"
+                              controls
+                            >
+                              Your browser does not support the video tag.
+                            </video>
+                          ) : (
+                            type === 'file' && (
+                              <a href={`http://localhost:8000${file_url}`} target="_blank" rel="noopener noreferrer" className="text-white-600 underline">
+                                {file_url.substring(9)}
+                              </a>
+                            )
+                          )
+                        )}
+
 
 												{<div ref={messageRef}></div>}
 												

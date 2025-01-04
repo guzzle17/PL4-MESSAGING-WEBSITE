@@ -27,7 +27,7 @@ module.exports = (io) => {
         message,
         conversationId,
         members,
-        user: { id: user._id, fullName: user.fullName, email: user.email },
+        user: { id: user._id, fullName: user.fullName, avatar: user.profile_picture },
         type,
         file_url,
       };
