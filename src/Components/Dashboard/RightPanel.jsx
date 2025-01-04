@@ -6,28 +6,12 @@ export default function RightPanel({
   users,
   messages,
   setMessages,
-  conversations,
   setConversations,
   currentConversation,
   setCurrentConversation,
   isAdmin,
-  fetchMessages,
-
-  handleLeaveGroup,
-  handleDeleteGroup,
   showAddMembersModal,
   setShowAddMembersModal,
-  addMemberQuery,
-  setAddMemberQuery,
-  filteredAddMembers,
-
-  handleEditGroup,
-  editGroupName,
-  setEditGroupName,
-  editGroupAvatar,
-  setEditGroupAvatar,
-  handleAssignAdmin,
-
   user,
   findConversation
   

@@ -91,72 +91,9 @@ export default function Dashboard() {
         }));
     });
 
-    // Lắng nghe khi có thành viên được thêm vào
-    socket.on('memberAdded', (data) => {
-      if (currentConversation && data.conversationId === currentConversation.conversationId) {
-        setConversations((prev) =>
-          prev.map((conv) =>
-            conv.conversationId === data.conversationId
-              ? { ...conv, members: [...conv.members, ...data.newMembers] }
-              : conv
-          )
-        );
-      }
-    });
-
-    // Lắng nghe khi có thành viên bị xóa
-    socket.on('memberRemoved', (data) => {
-      if (currentConversation && data.conversationId === currentConversation.conversationId) {
-        setConversations((prev) =>
-          prev.map((conv) =>
-            conv.conversationId === data.conversationId
-              ? {
-                  ...conv,
-                  members: conv.members.filter(
-                    (m) => !data.removedMembers.includes(m._id)
-                  ),
-                }
-              : conv
-          )
-        );
-      }
-    });
-
-    // Lắng nghe khi group info được cập nhật
-    socket.on('groupInfoUpdated', (data) => {
-      if (currentConversation && data.conversationId === currentConversation.conversationId) {
-        setConversations((prev) =>
-          prev.map((conv) =>
-            conv.conversationId === data.conversationId
-              ? { ...conv, groupName: data.groupName, avatar: data.avatarUrl }
-              : conv
-          )
-        );
-        setMessages((prev) => ({
-          ...prev,
-          nameConversation: data.groupName,
-          avatar: data.avatarUrl,
-        }));
-      }
-    });
-
-    // Lắng nghe khi group bị xóa
-    socket.on('groupDeleted', (data) => {
-      if (currentConversation && data.conversationId === currentConversation.conversationId) {
-        setConversations((prev) =>
-          prev.filter((conv) => conv.conversationId !== data.conversationId)
-        );
-        setMessages([]);
-        setCurrentConversation(null);
-      }
-    });
 
     return () => {
       socket.off('getMessage');
-      socket.off('memberAdded');
-      socket.off('memberRemoved');
-      socket.off('groupInfoUpdated');
-      socket.off('groupDeleted');
       socket.off('getUsers');
     };
   }, [socket, currentConversation]);
@@ -350,17 +287,12 @@ export default function Dashboard() {
           users={users}
           messages={messages}
           setMessages={setMessages}
-          conversations={conversations}
           setConversations={setConversations}
           currentConversation={currentConversation}
           setCurrentConversation={setCurrentConversation}
           isAdmin={isAdmin}
-          fetchMessages={fetchMessages}
           showAddMembersModal={showAddMembersModal}
           setShowAddMembersModal={setShowAddMembersModal}
-          addMemberQuery={addMemberQuery}
-          setAddMemberQuery={setAddMemberQuery}
-          filteredAddMembers={filteredAddMembers}
           user={user}
           findConversation={findConversation}
         />
