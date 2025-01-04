@@ -72,13 +72,15 @@ export default function CreateGroupModal({
         <div className="max-h-[300px] overflow-y-auto">
           {filteredUsers.map((u) => (
             <div key={u.userId} className="flex items-center justify-between border-b p-2">
-              <div className="flex items-center">
+              <div className="flex items-center gap-2">
                 {/* Ảnh đại diện */}
-                <img
-                  src="https://via.placeholder.com/50"
-                  className="w-10 h-10 rounded-full mr-2"
-                  alt="User"
-                />
+                {!!(u.profile_picture) ? (
+                <img class='w-10 h-10 rounded-full' src={`http://localhost:8000${u.profile_picture}`} />
+                ) : (
+                <div class="flex items-center justify-center mr-auto ml-auto w-10 h-10 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-600">
+                    <svg class="w-10 h-10 text-gray-400 -left-1" fill="currentColor" viewBox="0 0 30 24" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M 15 13.5 a 4.5 4.5 90 1 0 0 -9 a 4.5 4.5 90 0 0 0 9 z m -10.5 13.5 a 10.5 10.5 90 1 1 21 0 H 4.5 z" clip-rule="evenodd"></path></svg>
+                </div>
+                )}
                 <div>
                   <span className="block font-semibold">{u.fullName}</span>
                   <span className="block text-sm text-gray-600">{u.email}</span>

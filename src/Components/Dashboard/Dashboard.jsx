@@ -379,6 +379,7 @@ export default function Dashboard() {
           conversations={conversations}
           setConversations={setConversations}
           user={user}
+          users={users}
         />
       )}
 
