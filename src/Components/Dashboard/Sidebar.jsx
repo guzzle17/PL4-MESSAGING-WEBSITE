@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router';
 import { Dropdown, DropdownHeader, DarkThemeToggle } from 'flowbite-react';
 import { CgProfile } from 'react-icons/cg';
 import { MdCreate, MdLogout } from 'react-icons/md';
@@ -12,11 +13,18 @@ export default function Sidebar({
   filteredUsers,
   filteredGroups,
   fetchMessages,
-  handleLogout,
   setShowCreateGroupModal,
   setShowUpdateProfileModal,
   findConversation
 }) {
+  const navigate = useNavigate()
+
+  // Hàm đăng xuất
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    navigate('/users/sign_in');
+  };
+
   return (
     <div className="w-[25%] h-screen bg-secondary overflow-auto">
       {/* Thanh trên cùng: dropdown + search */}

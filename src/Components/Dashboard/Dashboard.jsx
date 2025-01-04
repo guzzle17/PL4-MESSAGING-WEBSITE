@@ -43,8 +43,6 @@ export default function Dashboard() {
 
   // Chỉnh sửa group:
   const [currentConversation, setCurrentConversation] = useState(null);
-  const [editGroupName, setEditGroupName] = useState('');
-  const [editGroupAvatar, setEditGroupAvatar] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Upload file
@@ -78,18 +76,19 @@ export default function Dashboard() {
 
     // Lắng nghe tin nhắn
     socket.on('getMessage', (data) => {
-      setMessages((prev) => ({
-        ...prev,
-        messages: [
-          ...(prev.messages || []),
-          {
-            user: data.user,
-            message: data.message,
-            type: data.type,
-            file_url: data.file_url,
-          },
-        ],
-      }));
+      if (data.conversationId === currentConversation?.conversationId)
+        setMessages((prev) => ({
+          ...prev,
+          messages: [
+            ...(prev.messages || []),
+            {
+              user: data.user,
+              message: data.message,
+              type: data.type,
+              file_url: data.file_url,
+            },
+          ],
+        }));
     });
 
     // Lắng nghe khi có thành viên được thêm vào
@@ -314,332 +313,6 @@ export default function Dashboard() {
     }
   };
 
-  // Hàm gửi tin nhắn
-  const sendMessage = async (receiver) => {
-    if (!message && !file) return;
-
-    const formData = new FormData();
-    formData.append('conversationId', messages?.conversationId);
-    formData.append('senderId', user?.id);
-    formData.append('receiverId', receiver.receiverId)
-    if (message) formData.append('message', message);
-    if (file) formData.append('file', file);
-
-    try {
-      const res = await fetch(`http://localhost:8000/api/message`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        if (data.conversationId){
-          messages.conversationId = data.conversationId
-          currentConversation.conversationId = data.conversationId
-        }
-        socket?.emit('sendMessage', {
-          senderId: user?.id,
-          members: messages?.members?.map((member) => member._id),
-          message: data.message.message,
-          conversationId: messages?.conversationId,
-          type: data.message.type,
-          file_url: data.message.file_url,
-        });
-      } else {
-        console.error('Failed to send message');
-      }
-    } catch (error) {
-      console.error('sendMessage error:', error);
-    }
-
-    setMessage('');
-    setFile(null);
-    setPreviewUrl(null);
-  };
-
-  // Hàm đăng xuất
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    navigate('/users/sign_in');
-  };
-
-  // Xử lý chọn file (hình, pdf, ...)
-  const handleFileSelect = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      if (selectedFile.type.startsWith('image/')) {
-        const url = URL.createObjectURL(selectedFile);
-        setPreviewUrl(url);
-      } else {
-        setPreviewUrl(null);
-      }
-    }
-  };
-
-  // -------------- HÀM TẠO NHÓM ---------------
-  const handleToggleMember = (member) => {
-    if (selectedMembers.includes(member)) {
-      setSelectedMembers(selectedMembers.filter((m) => m !== member));
-    } else {
-      setSelectedMembers([...selectedMembers, member]);
-    }
-  };
-
-  const handleCreateGroup = async () => {
-    if (!selectedMembers || selectedMembers.length === 0) {
-      alert('Vui lòng chọn ít nhất một thành viên.');
-      return;
-    }
-    try {
-      const response = await fetch('http://localhost:8000/api/conversation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          senderId: user?.id,
-          receiverId: selectedMembers.map((m) => m.receiverId),
-          isGroup: true,
-          groupName: 'Nhóm của tôi',
-        }),
-      });
-
-      if (response.ok) {
-        const newGroup = await response.json();
-        alert('Nhóm đã được tạo thành công!');
-        setConversations([...conversations, newGroup]);
-        setShowCreateGroupModal(false);
-        setSelectedMembers([]);
-        setSearchQuery('');
-      } else {
-        const error = await response.json();
-        console.error('Failed to create group:', error.message);
-        alert('Đã xảy ra lỗi khi tạo nhóm. Vui lòng thử lại.');
-      }
-    } catch (err) {
-      console.error('Error creating group:', err);
-      alert('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.');
-    }
-  };
-
-  // -------------- HÀM THÊM THÀNH VIÊN ---------------
-  const handleAddMember = async (memberId) => {
-    if (!currentConversation) return;
-    try {
-      const response = await fetch(
-        `http://localhost:8000/api/conversation/${currentConversation.conversationId}/addMembers`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            senderId: user.id,
-            membersToAdd: [memberId],
-          }),
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        alert('Member added successfully!');
-        setConversations((prev) =>
-          prev.map((conv) =>
-            conv.conversationId === currentConversation?.conversationId
-              ? { ...conv, members: data.members }
-              : conv
-          )
-        );
-        setShowAddMembersModal(false);
-      } else {
-        const error = await response.json();
-        console.error('Failed to add member:', error.message);
-        alert('Failed to add member.');
-      }
-    } catch (err) {
-      console.error('Error adding member:', err);
-      alert('An error occurred while adding the member.');
-    }
-  };
-
-  // -------------- CÁC HÀM LIÊN QUAN ĐẾN GROUP ---------------
-  const handleRemoveMember = async (memberId) => {
-    if (!currentConversation) return;
-    if (!window.confirm('Are you sure you want to remove this member?')) return;
-
-    try {
-      const response = await fetch(
-        `http://localhost:8000/api/conversation/${currentConversation.conversationId}/removeMembers`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            senderId: user.id,
-            membersToRemove: [memberId],
-          }),
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        alert('Member removed successfully!');
-        setConversations((prev) =>
-          prev.map((conv) =>
-            conv.conversationId === currentConversation.conversationId
-              ? { ...conv, members: data.members }
-              : conv
-          )
-        );
-        setShowAddMembersModal(false); // Hoặc setShowRemoveMembersModal(false) nếu bạn có modal remove riêng
-      } else {
-        const error = await response.json();
-        console.error('Failed to remove member:', error.message);
-        alert('Failed to remove member.');
-      }
-    } catch (err) {
-      console.error('Error removing member:', err);
-      alert('An error occurred while removing the member.');
-    }
-  };
-
-  const handleLeaveGroup = async () => {
-    if (!currentConversation) return;
-    if (!window.confirm('Are you sure you want to leave this group?')) return;
-
-    try {
-      const response = await fetch(
-        `http://localhost:8000/api/conversation/${currentConversation.conversationId}/leave`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id }),
-        }
-      );
-
-      if (response.ok) {
-        alert('You have left the group.');
-        setConversations((prev) =>
-          prev.filter((conv) => conv.conversationId !== currentConversation.conversationId)
-        );
-        setMessages([]);
-        setCurrentConversation(null);
-      } else {
-        const error = await response.json();
-        console.error('Failed to leave group:', error.message);
-        alert('Failed to leave the group.');
-      }
-    } catch (err) {
-      console.error('Error leaving group:', err);
-      alert('An error occurred while leaving the group.');
-    }
-  };
-
-  const handleDeleteGroup = async () => {
-    if (!currentConversation) return;
-    if (!window.confirm('Are you sure you want to delete this group?')) return;
-
-    try {
-      const response = await fetch(
-        `http://localhost:8000/api/conversation/${currentConversation.conversationId}`,
-        {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ senderId: user.id }),
-        }
-      );
-
-      if (response.ok) {
-        alert('Group deleted successfully!');
-        setConversations((prev) =>
-          prev.filter((conv) => conv.conversationId !== currentConversation.conversationId)
-        );
-        setMessages([]);
-        setCurrentConversation(null);
-      } else {
-        const error = await response.json();
-        console.error('Failed to delete group:', error.message);
-        alert('Failed to delete the group.');
-      }
-    } catch (err) {
-      console.error('Error deleting group:', err);
-      alert('An error occurred while deleting the group.');
-    }
-  };
-
-  // -------------- CHỈ ĐỊNH ADMIN ---------------
-  const handleAssignAdmin = async (memberId) => {
-    if (!currentConversation) return;
-
-    try {
-      const response = await fetch(
-        `http://localhost:8000/api/conversation/${currentConversation.conversationId}/assignAdmin`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            senderId: user.id,
-            memberId: memberId,
-          }),
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        alert('Admin role has been assigned successfully!');
-        setConversations((prev) =>
-          prev.map((conv) =>
-            conv.conversationId === currentConversation.conversationId
-              ? { ...conv, admins: data.admins }
-              : conv
-          )
-        );
-      } else {
-        const error = await response.json();
-        console.error('Failed to assign admin:', error.message);
-        alert('Failed to assign admin role.');
-      }
-    } catch (err) {
-      console.error('Error assigning admin:', err);
-      alert('An error occurred while assigning admin role.');
-    }
-  };
-
-  // -------------- EDIT GROUP THÔNG TIN ---------------
-  const handleEditGroup = async () => {
-    if (!currentConversation) return;
-
-    const formData = new FormData();
-    formData.append('senderId', user.id);
-    if (editGroupName) formData.append('groupName', editGroupName);
-    if (editGroupAvatar) formData.append('avatar', editGroupAvatar);
-
-    try {
-      const response = await fetch(
-        `http://localhost:8000/api/conversation/${currentConversation.conversationId}`,
-        {
-          method: 'PUT',
-          body: formData,
-        }
-      );
-
-      if (response.ok) {
-        const updatedConversation = await response.json();
-        setConversations((prev) =>
-          prev.map((conv) =>
-            conv.conversationId === updatedConversation.conversationId ? updatedConversation : conv
-          )
-        );
-        messages.avatar = updatedConversation.avatar;
-        messages.nameConversation = updatedConversation.nameConversation;
-        alert('Group information updated successfully!');
-      } else {
-        const error = await response.json();
-        console.error('Failed to edit group:', error.message);
-        alert('Failed to update group information.');
-      }
-    } catch (err) {
-      console.error('Error editing group:', err);
-      alert('An error occurred while updating group information.');
-    }
-  };
-
   return (
     <Flowbite>
       <div className="w-screen flex">
@@ -652,7 +325,6 @@ export default function Dashboard() {
           filteredUsers={filteredUsers}
           filteredGroups={filteredGroups}
           fetchMessages={fetchMessages}
-          handleLogout={handleLogout}
           setShowCreateGroupModal={setShowCreateGroupModal}
           setShowUpdateProfileModal={setShowUpdateProfileModal}
           findConversation={findConversation}
@@ -661,41 +333,34 @@ export default function Dashboard() {
         {/* --------- KHUNG CHAT Ở GIỮA --------- */}
         <ChatWindow
           messages={messages}
+          currentConversation={currentConversation}
           message={message}
           setMessage={setMessage}
-          sendMessage={sendMessage}
           file={file}
           setFile={setFile}
-          handleFileSelect={handleFileSelect}
           previewUrl={previewUrl}
           setPreviewUrl={setPreviewUrl}
           messageRef={messageRef}
           user={user}
+          socket={socket}
         />
 
         {/* --------- CỘT PHẢI: RIGHT PANEL --------- */}
         <RightPanel
           users={users}
           messages={messages}
+          setMessages={setMessages}
           conversations={conversations}
+          setConversations={setConversations}
           currentConversation={currentConversation}
+          setCurrentConversation={setCurrentConversation}
           isAdmin={isAdmin}
           fetchMessages={fetchMessages}
-          handleRemoveMember={handleRemoveMember}
-          handleLeaveGroup={handleLeaveGroup}
-          handleDeleteGroup={handleDeleteGroup}
-          handleAddMember={handleAddMember}
           showAddMembersModal={showAddMembersModal}
           setShowAddMembersModal={setShowAddMembersModal}
           addMemberQuery={addMemberQuery}
           setAddMemberQuery={setAddMemberQuery}
           filteredAddMembers={filteredAddMembers}
-          handleEditGroup={handleEditGroup}
-          editGroupName={editGroupName}
-          setEditGroupName={setEditGroupName}
-          editGroupAvatar={editGroupAvatar}
-          setEditGroupAvatar={setEditGroupAvatar}
-          handleAssignAdmin={handleAssignAdmin}
           user={user}
           findConversation={findConversation}
         />
@@ -710,8 +375,10 @@ export default function Dashboard() {
           setSearchQuery={setSearchQuery}
           filteredUsers={filteredUsers}
           selectedMembers={selectedMembers}
-          handleToggleMember={handleToggleMember}
-          handleCreateGroup={handleCreateGroup}
+          setSelectedMembers={setSelectedMembers}
+          conversations={conversations}
+          setConversations={setConversations}
+          user={user}
         />
       )}
 
@@ -732,7 +399,9 @@ export default function Dashboard() {
           addMemberQuery={addMemberQuery}
           setAddMemberQuery={setAddMemberQuery}
           filteredAddMembers={filteredAddMembers}
-          handleAddMember={handleAddMember}
+          currentConversation={currentConversation}
+          setConversations={setConversations}
+          user={user}
         />
       )}
     </Flowbite>

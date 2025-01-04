@@ -8,7 +8,7 @@ import ConversationMediaFilesView from "./ConversationMediaFilesView";
 import { SearchModal } from "./SearchModal";
 import userDefault from '../Assets/userDefault.png';
 
-const ConversationDetails = ({ members, nameConversation, description, isGroup, avatar, messages, admins, handleLeaveGroup, handleRemoveMember, handleDeleteGroup, handleEditGroup, handleAssignAdmin, isAdmin, addMembersHook, editGroupNameHook, editGroupAvatarHook, currentUser, findConversation }) => {
+const ConversationDetails = ({ members, nameConversation, description, isGroup, avatar, messages, admins, isAdmin, addMembersHook, currentUser, findConversation, currentConversation, setConversations, setCurrentConversation, setMessages }) => {
     const [customizeChatListOpen, setCustomizeChatListOpen] = useState(false)
     const [chatMembersListOpen, setChatMembersListOpen] = useState(false)
     const [mediaFilesListOpen, setMediaFilesListOpen] = useState(false)
@@ -19,8 +19,189 @@ const ConversationDetails = ({ members, nameConversation, description, isGroup, 
     const [openSearchModal, setOpenSearchModal] = useState(false)
     const [user, setUser] = useState([])
     const [showAddMembersModal, setShowAddMembersModal] = addMembersHook
-    const [editGroupAvatar, setEditGroupAvatar] = editGroupAvatarHook
-    const [editGroupName, setEditGroupName] = editGroupNameHook
+    const [editGroupName, setEditGroupName] = useState('');
+    const [editGroupAvatar, setEditGroupAvatar] = useState(null);
+
+    // -------------- CÁC HÀM LIÊN QUAN ĐẾN GROUP ---------------
+
+    const handleRemoveMember = async (memberId) => {
+        if (!currentConversation) return;
+        if (!window.confirm('Are you sure you want to remove this member?')) return;
+    
+        try {
+          const response = await fetch(
+            `http://localhost:8000/api/conversation/${currentConversation.conversationId}/removeMembers`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                senderId: currentUser.id,
+                membersToRemove: [memberId],
+              }),
+            }
+          );
+    
+          if (response.ok) {
+            const data = await response.json();
+            alert('Member removed successfully!');
+            setConversations((prev) =>
+              prev.map((conv) =>
+                conv.conversationId === currentConversation.conversationId
+                  ? { ...conv, members: data.members }
+                  : conv
+              )
+            );
+          } else {
+            const error = await response.json();
+            console.error('Failed to remove member:', error.message);
+            alert('Failed to remove member.');
+          }
+        } catch (err) {
+          console.error('Error removing member:', err);
+          alert('An error occurred while removing the member.');
+        }
+    };
+    
+    const handleLeaveGroup = async () => {
+        if (!currentConversation) return;
+        if (!window.confirm('Are you sure you want to leave this group?')) return;
+
+        try {
+        const response = await fetch(
+            `http://localhost:8000/api/conversation/${currentConversation.conversationId}/leave`,
+            {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUser.id }),
+            }
+        );
+
+        if (response.ok) {
+            alert('You have left the group.');
+            setConversations((prev) =>
+            prev.filter((conv) => conv.conversationId !== currentConversation.conversationId)
+            );
+            setMessages([]);
+            setCurrentConversation(null);
+        } else {
+            const error = await response.json();
+            console.error('Failed to leave group:', error.message);
+            alert('Failed to leave the group.');
+        }
+        } catch (err) {
+        console.error('Error leaving group:', err);
+        alert('An error occurred while leaving the group.');
+        }
+    };
+
+    const handleDeleteGroup = async () => {
+        if (!currentConversation) return;
+        if (!window.confirm('Are you sure you want to delete this group?')) return;
+
+        try {
+        const response = await fetch(
+            `http://localhost:8000/api/conversation/${currentConversation.conversationId}`,
+            {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ senderId: currentUser.id }),
+            }
+        );
+
+        if (response.ok) {
+            alert('Group deleted successfully!');
+            setConversations((prev) =>
+            prev.filter((conv) => conv.conversationId !== currentConversation.conversationId)
+            );
+            setMessages([]);
+            setCurrentConversation(null);
+        } else {
+            const error = await response.json();
+            console.error('Failed to delete group:', error.message);
+            alert('Failed to delete the group.');
+        }
+        } catch (err) {
+        console.error('Error deleting group:', err);
+        alert('An error occurred while deleting the group.');
+        }
+    };
+
+    // -------------- CHỈ ĐỊNH ADMIN ---------------
+    const handleAssignAdmin = async (memberId) => {
+        if (!currentConversation) return;
+
+        try {
+        const response = await fetch(
+            `http://localhost:8000/api/conversation/${currentConversation.conversationId}/assignAdmin`,
+            {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                senderId: currentUser.id,
+                memberId: memberId,
+            }),
+            }
+        );
+
+        if (response.ok) {
+            const data = await response.json();
+            alert('Admin role has been assigned successfully!');
+            setConversations((prev) =>
+            prev.map((conv) =>
+                conv.conversationId === currentConversation.conversationId
+                ? { ...conv, admins: data.admins }
+                : conv
+            )
+            );
+        } else {
+            const error = await response.json();
+            console.error('Failed to assign admin:', error.message);
+            alert('Failed to assign admin role.');
+        }
+        } catch (err) {
+        console.error('Error assigning admin:', err);
+        alert('An error occurred while assigning admin role.');
+        }
+    };
+
+    // -------------- EDIT GROUP THÔNG TIN ---------------
+    const handleEditGroup = async () => {
+        if (!currentConversation) return;
+
+        const formData = new FormData();
+        formData.append('senderId', currentUser.id);
+        if (editGroupName) formData.append('groupName', editGroupName);
+        if (editGroupAvatar) formData.append('avatar', editGroupAvatar);
+
+        try {
+        const response = await fetch(
+            `http://localhost:8000/api/conversation/${currentConversation.conversationId}`,
+            {
+            method: 'PUT',
+            body: formData,
+            }
+        );
+
+        if (response.ok) {
+            const updatedConversation = await response.json();
+            setConversations((prev) =>
+            prev.map((conv) =>
+                conv.conversationId === updatedConversation.conversationId ? updatedConversation : conv
+            )
+            );
+            avatar = updatedConversation.avatar;
+            nameConversation = updatedConversation.nameConversation;
+            alert('Group information updated successfully!');
+        } else {
+            const error = await response.json();
+            console.error('Failed to edit group:', error.message);
+            alert('Failed to update group information.');
+        }
+        } catch (err) {
+        console.error('Error editing group:', err);
+        alert('An error occurred while updating group information.');
+        }
+    };
 
     return (
     <>

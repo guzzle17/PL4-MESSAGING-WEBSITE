@@ -7,10 +7,56 @@ export default function CreateGroupModal({
   setSearchQuery,
   filteredUsers,
   selectedMembers,
-  handleToggleMember,
-  handleCreateGroup,
+  setSelectedMembers,
+  conversations,
+  setConversations,
+  user
 }) {
   if (!show) return null;
+
+  // -------------- HÀM TẠO NHÓM ---------------
+  const handleToggleMember = (member) => {
+    if (selectedMembers.includes(member)) {
+      setSelectedMembers(selectedMembers.filter((m) => m !== member));
+    } else {
+      setSelectedMembers([...selectedMembers, member]);
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    if (!selectedMembers || selectedMembers.length === 0) {
+      alert('Vui lòng chọn ít nhất một thành viên.');
+      return;
+    }
+    try {
+      const response = await fetch('http://localhost:8000/api/conversation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          senderId: user?.id,
+          receiverId: selectedMembers.map((m) => m.receiverId),
+          isGroup: true,
+          groupName: 'Nhóm của tôi',
+        }),
+      });
+
+      if (response.ok) {
+        const newGroup = await response.json();
+        alert('Nhóm đã được tạo thành công!');
+        setConversations([...conversations, newGroup]);
+        onClose()
+        setSelectedMembers([]);
+        setSearchQuery('');
+      } else {
+        const error = await response.json();
+        console.error('Failed to create group:', error.message);
+        alert('Đã xảy ra lỗi khi tạo nhóm. Vui lòng thử lại.');
+      }
+    } catch (err) {
+      console.error('Error creating group:', err);
+      alert('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.');
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">

@@ -7,9 +7,49 @@ export default function AddMembersModal({
   addMemberQuery,
   setAddMemberQuery,
   filteredAddMembers,
-  handleAddMember,
+  currentConversation,
+  setConversations,
+  user
 }) {
   if (!show) return null;
+
+  // -------------- HÀM THÊM THÀNH VIÊN ---------------
+  const handleAddMember = async (memberId) => {
+    if (!currentConversation) return;
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/conversation/${currentConversation.conversationId}/addMembers`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            senderId: user.id,
+            membersToAdd: [memberId],
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        alert('Member added successfully!');
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.conversationId === currentConversation?.conversationId
+              ? { ...conv, members: data.members }
+              : conv
+          )
+        );
+        onClose();
+      } else {
+        const error = await response.json();
+        console.error('Failed to add member:', error.message);
+        alert('Failed to add member.');
+      }
+    } catch (err) {
+      console.error('Error adding member:', err);
+      alert('An error occurred while adding the member.');
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">

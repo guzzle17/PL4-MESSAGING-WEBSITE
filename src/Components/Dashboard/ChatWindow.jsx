@@ -4,16 +4,16 @@ import userDefault from '../../Assets/userDefault.png';
 
 export default function ChatWindow({
   messages,
+  currentConversation,
   message,
   setMessage,
-  sendMessage,
   file,
   setFile,
-  handleFileSelect,
   previewUrl,
   setPreviewUrl,
   messageRef,
-  user
+  user,
+  socket
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState('');
@@ -25,6 +25,63 @@ export default function ChatWindow({
   };
   const closeModal = () => {
     setIsModalOpen(false);
+  };
+
+  // Hàm gửi tin nhắn
+  const sendMessage = async (receiver) => {
+    if (!message && !file) return;
+
+    const formData = new FormData();
+    formData.append('conversationId', messages?.conversationId);
+    formData.append('senderId', user?.id);
+    formData.append('receiverId', receiver.receiverId)
+    if (message) formData.append('message', message);
+    if (file) formData.append('file', file);
+
+    try {
+      const res = await fetch(`http://localhost:8000/api/message`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        if (data.conversationId){
+          messages.conversationId = data.conversationId
+          currentConversation.conversationId = data.conversationId
+        }
+        socket?.emit('sendMessage', {
+          senderId: user?.id,
+          members: messages?.members?.map((member) => member._id),
+          message: data.message.message,
+          conversationId: messages?.conversationId,
+          type: data.message.type,
+          file_url: data.message.file_url,
+        });
+      } else {
+        console.error('Failed to send message');
+      }
+    } catch (error) {
+      console.error('sendMessage error:', error);
+    }
+
+    setMessage('');
+    setFile(null);
+    setPreviewUrl(null);
+  };
+
+  // Xử lý chọn file (hình, pdf, ...)
+  const handleFileSelect = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      if (selectedFile.type.startsWith('image/')) {
+        const url = URL.createObjectURL(selectedFile);
+        setPreviewUrl(url);
+      } else {
+        setPreviewUrl(null);
+      }
+    }
   };
 
   return (

@@ -5,15 +5,16 @@ import ConversationDetails from '../ConversationDetails';
 export default function RightPanel({
   users,
   messages,
+  setMessages,
   conversations,
+  setConversations,
   currentConversation,
+  setCurrentConversation,
   isAdmin,
   fetchMessages,
 
-  handleRemoveMember,
   handleLeaveGroup,
   handleDeleteGroup,
-  handleAddMember,
   showAddMembersModal,
   setShowAddMembersModal,
   addMemberQuery,
@@ -42,17 +43,14 @@ export default function RightPanel({
           avatar={currentConversation?.avatar}
           messages={messages.messages}
           admins={currentConversation?.admins}
-          handleLeaveGroup={handleLeaveGroup}
-          handleRemoveMember={handleRemoveMember}
-          handleDeleteGroup={handleDeleteGroup}
-          handleEditGroup={handleEditGroup}
-          handleAssignAdmin={handleAssignAdmin}
           isAdmin={isAdmin}
           addMembersHook={[showAddMembersModal, setShowAddMembersModal]}
-          editGroupNameHook={[editGroupName, setEditGroupName]}
-          editGroupAvatarHook={[editGroupAvatar, setEditGroupAvatar]}
           currentUser={user}
           findConversation={findConversation}
+          currentConversation={currentConversation}
+          setConversations={setConversations}
+          setCurrentConversation={setCurrentConversation}
+          setMessages={setMessages}
         />
       ) : (
         // Hiển thị danh sách "People" (nếu chưa chọn conversation)
